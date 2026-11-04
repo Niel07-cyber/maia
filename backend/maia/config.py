@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     gemini_api_key: str = ""
 
-    llm_model: str = "gemini/gemini-2.5-flash"
-    llm_model_alt: str = "gemini/gemini-2.5-flash-lite"
+    llm_model: str = "gemini/gemini-3.8-flash"
+    llm_model_alt: str = "gemini/gemini-3.5-flash-lite"
     embedding_model: str = "gemini/gemini-embedding-001"
 
     database_url: str = "postgresql+psycopg://maia:maia@db:5432/maia"
