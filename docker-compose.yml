@@ -15,8 +15,19 @@ services:
       timeout: 3s
       retries: 10
 
+  migrate:
+    build: ./backend
+    image: maia-backend:dev
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://maia:maia@db:5432/maia
+    depends_on:
+      db:
+        condition: service_healthy
+
   backend:
     build: ./backend
+    image: maia-backend:dev
     env_file:
       - path: .env
         required: false
@@ -25,8 +36,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   pgdata:
