@@ -1,0 +1,1 @@
+"""MAIA backend package."""
