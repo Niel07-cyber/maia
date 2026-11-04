@@ -17,6 +17,11 @@ Requirements: Docker Desktop. For development without Docker: uv.
     cp .env.example .env        # add your API keys
     docker compose up --build   # Postgres + backend on http://localhost:8000
 
+Load or reset the fictional demo data:
+
+    docker compose run --rm backend python -m maia.db.seed          # load
+    docker compose run --rm backend python -m maia.db.seed --reset  # reset
+
 Development with hot reload:
 
     docker compose up -d db
