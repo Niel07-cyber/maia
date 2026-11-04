@@ -14,12 +14,18 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     gemini_api_key: str = ""
 
-    llm_model: str = "openai/gpt-4o-mini"
-    llm_model_alt: str = "gemini/gemini-2.5-flash"
-    embedding_model: str = "text-embedding-3-small"
+    llm_model: str = "gemini/gemini-2.5-flash"
+    llm_model_alt: str = "gemini/gemini-2.5-flash-lite"
+    embedding_model: str = "gemini/gemini-embedding-001"
 
     database_url: str = "postgresql+psycopg://maia:maia@db:5432/maia"
     frontend_origin: str = "http://localhost:5173"
+
+    def api_key_for(self, model: str) -> str:
+        """Pick the API key that matches a LiteLLM model name ("gemini/..." or "openai/...")."""
+        if model.startswith("gemini/"):
+            return self.gemini_api_key
+        return self.openai_api_key
 
 
 @lru_cache
