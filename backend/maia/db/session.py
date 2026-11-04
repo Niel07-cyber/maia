@@ -1,6 +1,7 @@
 """Engine and session factory. One engine per process, one session per request."""
 
 from collections.abc import Iterator
+from contextlib import contextmanager
 from functools import lru_cache
 
 from sqlalchemy import Engine, create_engine
@@ -23,4 +24,11 @@ def get_sessionmaker() -> sessionmaker[Session]:
 def get_session() -> Iterator[Session]:
     """FastAPI dependency: open a session for one request and always close it."""
     with get_sessionmaker()() as session:
+        yield session
+
+
+@contextmanager
+def transaction() -> Iterator[Session]:
+    """A session whose work is committed if the block succeeds and rolled back if it fails."""
+    with get_sessionmaker()() as session, session.begin():
         yield session

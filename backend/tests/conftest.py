@@ -4,7 +4,8 @@ back afterwards so tests never affect each other."""
 import hashlib
 import math
 import re
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager, contextmanager
 
 import pytest
 from sqlalchemy import Engine, create_engine, make_url, text
@@ -82,3 +83,16 @@ class FakeEmbedder:
 @pytest.fixture
 def embedder() -> FakeEmbedder:
     return FakeEmbedder()
+
+
+@pytest.fixture
+def transaction(depot: Session) -> Callable[[], AbstractContextManager[Session]]:
+    """Stand-in for maia.db.session.transaction: each tool call runs in a savepoint inside
+    the test's transaction, so a failed call rolls back only its own changes."""
+
+    @contextmanager
+    def savepoint() -> Iterator[Session]:
+        with depot.begin_nested():
+            yield depot
+
+    return savepoint
