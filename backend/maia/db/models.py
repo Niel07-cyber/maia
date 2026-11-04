@@ -92,6 +92,7 @@ class WorkOrder(Base):
     __tablename__ = "work_orders"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    session_id: Mapped[str | None] = mapped_column(String(64), index=True)
     vehicle_id: Mapped[str] = mapped_column(ForeignKey("vehicles.id"))
     asset_id: Mapped[str | None] = mapped_column(ForeignKey("assets.id"))
     procedure_code: Mapped[str] = mapped_column(String(20))
