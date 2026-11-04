@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from maia.config import get_settings
 from maia.db import models  # noqa: F401  (registers the tables on Base.metadata)
 from maia.db.base import Base
+from maia.db.seed import seed
 
 TEST_DATABASE = "maia_test"
 
@@ -47,3 +48,11 @@ def db_session(engine: Engine) -> Iterator[Session]:
     session.close()
     transaction.rollback()
     connection.close()
+
+
+@pytest.fixture
+def depot(db_session: Session) -> Session:
+    """A session with the demo depot loaded: two vehicles, their components, the parts store."""
+    seed(db_session)
+    db_session.flush()
+    return db_session
