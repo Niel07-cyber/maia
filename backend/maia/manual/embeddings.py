@@ -34,5 +34,6 @@ class LiteLLMEmbedder:
             input=texts,
             dimensions=EMBEDDING_DIMENSIONS,
             api_key=self.api_key,
+            num_retries=3,
         )
         return [list(item["embedding"]) for item in response.data]

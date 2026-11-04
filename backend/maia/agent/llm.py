@@ -32,9 +32,9 @@ class ChatModel(Protocol):
 
 
 class LiteLLMChat:
-    """A hosted chat model through LiteLLM (default: Gemini 2.5 Flash)."""
+    """A hosted chat model through LiteLLM (default: the model set in LLM_MODEL)."""
 
-    def __init__(self, model: str | None = None, temperature: float = 0.2) -> None:
+    def __init__(self, model: str | None = None, temperature: float | None = None) -> None:
         settings = get_settings()
         self.model = model or settings.llm_model
         self.api_key = settings.api_key_for(self.model)
@@ -44,12 +44,14 @@ class LiteLLMChat:
         import litellm  # slow to import; only needed for real calls
 
         logging.getLogger("LiteLLM").setLevel(logging.WARNING)
+        options = {} if self.temperature is None else {"temperature": self.temperature}
         response = litellm.completion(
             model=self.model,
             messages=messages,
             tools=tools,
-            temperature=self.temperature,
             api_key=self.api_key,
+            num_retries=3,
+            **options,
         )
         message = response.choices[0].message
         tool_calls = [
