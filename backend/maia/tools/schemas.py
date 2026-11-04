@@ -58,3 +58,10 @@ class ShiftReport(BaseModel):
     steps: list[StepLogged]
     work_orders: list[WorkOrderInfo]
     summary: str
+
+
+class ManualHit(BaseModel):
+    section_code: str
+    title: str
+    content: str
+    similarity: float  # 1.0 = same meaning, 0 = unrelated

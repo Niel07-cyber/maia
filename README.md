@@ -22,6 +22,10 @@ Load or reset the fictional demo data:
     docker compose run --rm backend python -m maia.db.seed          # load
     docker compose run --rm backend python -m maia.db.seed --reset  # reset
 
+Load the manual into the database (needs GEMINI_API_KEY in .env):
+
+    docker compose run --rm backend python -m maia.manual.ingest
+
 Development with hot reload:
 
     docker compose up -d db

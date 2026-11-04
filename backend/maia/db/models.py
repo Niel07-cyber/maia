@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from maia.db.base import Base
 
-EMBEDDING_DIMENSIONS = 1536  # size of OpenAI text-embedding-3-small vectors
+EMBEDDING_DIMENSIONS = 1536  # vector size requested from the embedding model
 
 
 class VehicleStatus(enum.StrEnum):
