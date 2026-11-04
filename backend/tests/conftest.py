@@ -1,6 +1,9 @@
 """Shared test fixtures: a dedicated test database, and a session per test that is rolled
 back afterwards so tests never affect each other."""
 
+import hashlib
+import math
+import re
 from collections.abc import Iterator
 
 import pytest
@@ -10,6 +13,7 @@ from sqlalchemy.orm import Session
 from maia.config import get_settings
 from maia.db import models  # noqa: F401  (registers the tables on Base.metadata)
 from maia.db.base import Base
+from maia.db.models import EMBEDDING_DIMENSIONS
 from maia.db.seed import seed
 
 TEST_DATABASE = "maia_test"
@@ -56,3 +60,25 @@ def depot(db_session: Session) -> Session:
     seed(db_session)
     db_session.flush()
     return db_session
+
+
+class FakeEmbedder:
+    """Offline stand-in for a real embedding model: each word is hashed to a position in the
+    vector, so texts that share words end up close together. Deterministic and free."""
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        return [self._vector(text) for text in texts]
+
+    @staticmethod
+    def _vector(text: str) -> list[float]:
+        vector = [0.0] * EMBEDDING_DIMENSIONS
+        for word in re.findall(r"[a-z0-9]+", text.lower()):
+            index = int(hashlib.md5(word.encode()).hexdigest(), 16) % EMBEDDING_DIMENSIONS
+            vector[index] += 1.0
+        norm = math.sqrt(sum(v * v for v in vector)) or 1.0
+        return [v / norm for v in vector]
+
+
+@pytest.fixture
+def embedder() -> FakeEmbedder:
+    return FakeEmbedder()
