@@ -17,9 +17,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project
 
 # Then our code, installed as a normal (non-editable) package.
+# --reinstall-package: uv only rebuilds the project when pyproject.toml changes, so without
+# it new .py files can be missing from the image (stale build reused from the uv cache).
 COPY maia ./maia
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-editable
+    uv sync --frozen --no-dev --no-editable --reinstall-package maia
 
 # ---------- Stage 2: small runtime image ----------
 FROM python:3.12-slim AS runtime
