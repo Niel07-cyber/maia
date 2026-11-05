@@ -14,10 +14,10 @@ class Embedder(Protocol):
 
 
 class LiteLLMEmbedder:
-    """Embeddings from a hosted model through LiteLLM (default: Gemini gemini-embedding-001).
+    """Embeddings from a hosted model through LiteLLM (default: OpenAI text-embedding-3-small).
 
     The model is asked for exactly EMBEDDING_DIMENSIONS numbers per text, to match the
-    database column. Gemini embeddings support shorter outputs without retraining."""
+    database column (text-embedding-3-small returns 1536 by default)."""
 
     def __init__(self, model: str | None = None, api_key: str | None = None) -> None:
         settings = get_settings()

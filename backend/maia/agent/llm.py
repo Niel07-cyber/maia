@@ -21,7 +21,7 @@ class LLMResponse:
     content: str | None
     tool_calls: list[ToolCall] = field(default_factory=list)
     # The assistant message exactly as the provider returned it. It is sent back on the next
-    # turn unchanged, so provider-specific details (such as Gemini's) are preserved.
+    # turn unchanged, so provider-specific details are preserved.
     raw_message: dict[str, Any] = field(default_factory=dict)
 
 

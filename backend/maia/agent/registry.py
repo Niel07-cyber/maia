@@ -148,7 +148,7 @@ class AgentTool:
     describe: Callable[[Any], str] | None = None
 
     def schema(self) -> dict[str, Any]:
-        """The tool in the OpenAI function-calling format, which LiteLLM converts for Gemini."""
+        """The tool in the OpenAI function-calling format, which LiteLLM converts per provider."""
         return {
             "type": "function",
             "function": {

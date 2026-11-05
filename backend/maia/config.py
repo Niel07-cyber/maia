@@ -14,9 +14,9 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     gemini_api_key: str = ""
 
-    llm_model: str = "gemini/gemini-3.8-flash"
-    llm_model_alt: str = "gemini/gemini-3.5-flash-lite"
-    embedding_model: str = "gemini/gemini-embedding-001"
+    llm_model: str = "openai/gpt-5.4-mini"
+    llm_model_alt: str = "openai/gpt-5.4-nano"
+    embedding_model: str = "openai/text-embedding-3-small"
 
     database_url: str = "postgresql+psycopg://maia:maia@db:5432/maia"
     frontend_origin: str = "http://localhost:5173"
