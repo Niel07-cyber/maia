@@ -20,7 +20,13 @@ logger = logging.getLogger(__name__)
 
 def seed(session: Session) -> None:
     """Insert or update the reference data. Safe to run any number of times."""
-    for obj in [*seed_data.vehicles(), *seed_data.assets(), *seed_data.parts()]:
+    reference_data = [
+        *seed_data.vehicles(),
+        *seed_data.assets(),
+        *seed_data.parts(),
+        *seed_data.measurement_limits(),
+    ]
+    for obj in reference_data:
         session.merge(obj)  # insert if the primary key is new, update it otherwise
 
 

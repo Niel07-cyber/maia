@@ -43,13 +43,18 @@ class LiteLLMChat:
         self.model = model or settings.llm_model
         self.api_key = settings.api_key_for(self.model)
         self.temperature = temperature
+        self.reasoning_effort = settings.llm_reasoning_effort
 
     def complete(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> LLMResponse:
         import litellm  # slow to import; only needed for real calls
         import openai
 
         logging.getLogger("LiteLLM").setLevel(logging.WARNING)
-        options = {} if self.temperature is None else {"temperature": self.temperature}
+        options: dict[str, Any] = {}
+        if self.temperature is not None:
+            options["temperature"] = self.temperature
+        if self.reasoning_effort:
+            options["reasoning_effort"] = self.reasoning_effort
         try:
             response = litellm.completion(
                 model=self.model,

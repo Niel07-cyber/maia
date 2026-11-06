@@ -6,6 +6,7 @@ from datetime import date, datetime
 from pydantic import BaseModel
 
 from maia.db.models import Priority, VehicleStatus, WorkOrderStatus
+from maia.tools.assessment import Assessment
 
 
 class AssetInfo(BaseModel):
@@ -51,6 +52,7 @@ class StepLogged(BaseModel):
     step: int
     reading: float | None
     unit: str | None
+    assessment: Assessment | None = None
 
 
 class ShiftReport(BaseModel):
