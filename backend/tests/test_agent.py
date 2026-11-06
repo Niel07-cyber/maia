@@ -4,36 +4,17 @@ from contextlib import AbstractContextManager
 from typing import Any
 
 import pytest
+from fakes import ScriptedLLM, call, say
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from maia.agent.agent import MAX_STEPS, Conversation, MaintenanceAgent
-from maia.agent.llm import LLMResponse, ToolCall
+from maia.agent.llm import LLMResponse
 from maia.agent.registry import TOOLS
 from maia.db.models import Part, PartReservation, WorkOrder
 from maia.manual.embeddings import Embedder
 
 Transaction = Callable[[], AbstractContextManager[Session]]
-
-
-class ScriptedLLM:
-    """Replays prepared model responses in order and records what the agent sent."""
-
-    def __init__(self, responses: list[LLMResponse]) -> None:
-        self.responses = list(responses)
-        self.received: list[list[dict[str, Any]]] = []
-
-    def complete(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> LLMResponse:
-        self.received.append([dict(m) for m in messages])
-        return self.responses.pop(0)
-
-
-def say(text: str) -> LLMResponse:
-    return LLMResponse(content=text)
-
-
-def call(name: str, *, call_id: str = "c1", **arguments: Any) -> LLMResponse:
-    return LLMResponse(content=None, tool_calls=[ToolCall(call_id, name, arguments)])
 
 
 WORK_ORDER_ARGS: dict[str, Any] = {
