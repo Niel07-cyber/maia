@@ -1,5 +1,3 @@
-import { ShieldAlert } from 'lucide-react'
-
 import type { PendingAction } from '@/api'
 import { Button } from '@/components/ui/button'
 
@@ -9,31 +7,40 @@ type Props = {
   onAnswer: (approved: boolean) => void
 }
 
+/** Styled like a lockout tag: nothing happens until a person signs it off. */
 export function PendingCard({ actions, busy, onAnswer }: Props) {
   return (
     <section
       aria-label="Needs your confirmation"
-      className="ml-10 rounded-xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/40"
+      className="ml-11 overflow-hidden rounded-2xl border bg-card shadow-md"
     >
-      <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
-        <ShieldAlert className="size-4" aria-hidden />
-        <h2 className="text-sm font-semibold">Needs your confirmation</h2>
-      </div>
-      <p className="mt-1 text-xs text-amber-800/80 dark:text-amber-200/70">
-        MAIA changes nothing until you confirm.
-      </p>
-      <ul className="mt-3 space-y-1 text-sm">
-        {actions.map((action, index) => (
-          <li key={index}>{action.description}</li>
-        ))}
-      </ul>
-      <div className="mt-4 flex gap-2">
-        <Button size="sm" disabled={busy} onClick={() => onAnswer(true)}>
-          Confirm
-        </Button>
-        <Button size="sm" variant="outline" disabled={busy} onClick={() => onAnswer(false)}>
-          Cancel
-        </Button>
+      <div
+        aria-hidden
+        className="h-2.5 bg-[repeating-linear-gradient(-45deg,var(--hivis)_0_12px,var(--ink)_12px_24px)]"
+      />
+      <div className="p-5">
+        <h2 className="font-display text-sm font-semibold text-ink">Needs your confirmation</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          MAIA changes nothing until you confirm.
+        </p>
+        <ul className="mt-4 space-y-2">
+          {actions.map((action, index) => (
+            <li
+              key={index}
+              className="rounded-lg border-l-4 border-hivis bg-muted/60 px-3 py-2 text-[15px]"
+            >
+              {action.description}
+            </li>
+          ))}
+        </ul>
+        <div className="mt-5 flex gap-2">
+          <Button disabled={busy} onClick={() => onAnswer(true)}>
+            Confirm
+          </Button>
+          <Button variant="outline" disabled={busy} onClick={() => onAnswer(false)}>
+            Cancel
+          </Button>
+        </div>
       </div>
     </section>
   )

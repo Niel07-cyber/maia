@@ -9,8 +9,9 @@ import {
   type ChatReply,
   type PendingAction,
 } from '@/api'
-import { ArrowRight, ArrowUp, RotateCcw, TrainFront } from 'lucide-react'
+import { ArrowUp, HardHat, Package, RotateCcw, Wrench } from 'lucide-react'
 
+import { Avatar } from '@/components/Avatar'
 import { MessageBubble, type Message } from '@/components/MessageBubble'
 import { PendingCard } from '@/components/PendingCard'
 import { WorkspacePanel } from '@/components/WorkspacePanel'
@@ -19,9 +20,17 @@ import { Textarea } from '@/components/ui/textarea'
 import { applyEvents, EMPTY_WORKSPACE, type Workspace } from '@/lib/workspace'
 
 const SUGGESTIONS = [
-  "I'm starting the brake pad inspection on bogie B2 of RV200-014.",
-  'How many brake pads are in stock?',
-  'What do I need to wear before working under the train?',
+  {
+    icon: Wrench,
+    title: 'Start a brake inspection',
+    text: "I'm starting the brake pad inspection on bogie B2 of RV200-014.",
+  },
+  { icon: Package, title: 'Check spare parts', text: 'How many brake pads are in stock?' },
+  {
+    icon: HardHat,
+    title: 'Safety before you start',
+    text: 'What do I need to wear before working under the train?',
+  },
 ]
 
 let nextId = 1
@@ -114,19 +123,23 @@ export default function App() {
 
   return (
     <div className="flex h-dvh flex-col bg-background text-foreground">
-      <header className="flex items-center justify-between border-b px-4 py-3 sm:px-6">
+      <header className="flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground sm:px-6">
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <TrainFront className="size-5" aria-hidden />
-          </div>
+          <Avatar className="size-9" />
           <div>
-            <h1 className="leading-tight font-semibold">MAIA</h1>
-            <p className="text-xs text-muted-foreground">
-              Maintenance assistant · RV-200 demo depot (fictional data)
+            <h1 className="font-display text-lg leading-none font-semibold tracking-tight">MAIA</h1>
+            <p className="mt-1 text-xs text-primary-foreground/70">
+              Maintenance assistant for the RV-200 demo depot
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={reset} disabled={busy}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={reset}
+          disabled={busy}
+          className="border-white/25 bg-white/5 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+        >
           <RotateCcw aria-hidden />
           Reset demo
         </Button>
@@ -137,28 +150,30 @@ export default function App() {
           <main className="flex-1 overflow-y-auto" aria-live="polite">
             <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
               {messages.length === 0 && (
-                <div className="flex flex-col items-center pt-12 text-center">
-                  <h2 className="text-2xl font-semibold tracking-tight">
-                    What are you working on?
+                <div className="pt-10">
+                  <h2 className="max-w-xl font-display text-3xl leading-tight font-semibold tracking-tight text-primary sm:text-4xl">
+                    What are you working on today?
                   </h2>
-                  <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                    MAIA guides you through RV-200 procedures step by step, from the manual, and
-                    asks before changing anything.
+                  <p className="mt-3 max-w-lg text-[15px] text-muted-foreground">
+                    MAIA walks you through RV-200 procedures one step at a time, straight from the
+                    manual, and asks before it changes anything.
                   </p>
-                  <div className="mt-8 grid w-full gap-2">
-                    {SUGGESTIONS.map((suggestion) => (
+                  <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                    {SUGGESTIONS.map(({ icon: Icon, title, text }) => (
                       <button
-                        key={suggestion}
+                        key={title}
                         type="button"
                         disabled={!sessionId || busy}
-                        onClick={() => send(suggestion)}
-                        className="group flex items-center justify-between rounded-xl border px-4 py-3 text-left text-sm transition-colors hover:bg-muted disabled:opacity-50"
+                        onClick={() => send(text)}
+                        className="flex flex-col items-start gap-3 rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors outline-none hover:border-primary/40 focus-visible:ring-[3px] focus-visible:ring-ring/60 disabled:opacity-50"
                       >
-                        {suggestion}
-                        <ArrowRight
-                          className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5"
-                          aria-hidden
-                        />
+                        <span className="flex size-9 items-center justify-center rounded-lg bg-secondary text-primary">
+                          <Icon className="size-5" aria-hidden />
+                        </span>
+                        <span>
+                          <span className="block text-sm font-semibold text-ink">{title}</span>
+                          <span className="mt-1 block text-sm text-muted-foreground">{text}</span>
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -171,17 +186,23 @@ export default function App() {
                 <PendingCard actions={pending} busy={busy} onAnswer={answer} />
               )}
               {busy && (
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <div className="flex size-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
-                    M
-                  </div>
-                  <span className="animate-pulse">MAIA is working…</span>
+                <div className="flex items-center gap-3">
+                  <Avatar />
+                  <span className="flex items-center gap-1" aria-label="MAIA is working">
+                    {[0, 150, 300].map((delay) => (
+                      <span
+                        key={delay}
+                        className="size-2 rounded-full bg-primary/60 motion-safe:animate-bounce"
+                        style={{ animationDelay: `${delay}ms` }}
+                      />
+                    ))}
+                  </span>
                 </div>
               )}
               {error && (
                 <p
                   role="alert"
-                  className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                  className="rounded-xl border border-destructive/30 bg-card px-4 py-3 text-sm text-destructive"
                 >
                   {error}
                 </p>
@@ -191,7 +212,7 @@ export default function App() {
           </main>
 
           <form onSubmit={onSubmit} className="mx-auto w-full max-w-3xl px-4 pb-4 sm:px-6">
-            <div className="flex items-end gap-2 rounded-2xl border bg-card p-2 shadow-sm focus-within:ring-2 focus-within:ring-ring/40">
+            <div className="flex items-end gap-2 rounded-2xl border bg-card p-2 shadow-md focus-within:border-hivis focus-within:ring-[3px] focus-within:ring-hivis/30">
               <label htmlFor="message" className="sr-only">
                 Message
               </label>
@@ -206,13 +227,13 @@ export default function App() {
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={onKeyDown}
                 disabled={!sessionId}
-                className="max-h-40 min-h-10 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent"
+                className="max-h-40 min-h-10 resize-none border-0 bg-transparent text-[15px] shadow-none focus-visible:ring-0 md:text-[15px] dark:bg-transparent"
               />
               <Button
                 type="submit"
                 size="icon"
                 aria-label="Send"
-                className="shrink-0 rounded-xl"
+                className="size-10 shrink-0 rounded-xl"
                 disabled={!input.trim() || !sessionId || busy}
               >
                 <ArrowUp aria-hidden />
