@@ -9,4 +9,5 @@ technician:
     - The opening time is 3.1 seconds, but obstacle detection failed, the door did not reverse at 150 N.
   confirm: approve
 expect:
-  mentions: [DS-450, stock]
+  tools_called: [check_stock]
+  mentions: [DS-450]
