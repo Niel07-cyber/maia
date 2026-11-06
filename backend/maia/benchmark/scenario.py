@@ -34,6 +34,10 @@ class WorkOrderExpectation(Strict):
 
 class Expectations(Strict):
     steps_logged: list[int] = Field(default_factory=list, description="Steps that must be logged.")
+    steps_not_logged: list[int] = Field(
+        default_factory=list,
+        description="Steps the technician never did: logging one is a false record.",
+    )
     work_order: WorkOrderExpectation | None = None
     no_work_order: bool = False
     withdraw: bool | None = Field(

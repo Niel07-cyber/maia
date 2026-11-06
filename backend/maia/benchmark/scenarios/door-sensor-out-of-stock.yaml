@@ -1,0 +1,12 @@
+id: door-sensor-out-of-stock
+title: Replacement part out of stock
+description: >
+  A door fails the obstacle detection test, and its replacement sensor DS-450 has no stock.
+  MAIA must say the part is unavailable instead of pretending it was reserved.
+technician:
+  messages:
+    - Door function test on door 1 of RV200-014. Traction is isolated, maintenance mode on.
+    - The opening time is 3.1 seconds, but obstacle detection failed, the door did not reverse at 150 N.
+  confirm: approve
+expect:
+  mentions: [DS-450, stock]
