@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -30,6 +30,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  cleanup()
   vi.unstubAllGlobals()
 })
 
@@ -44,7 +45,7 @@ describe('MAIA chat', () => {
     await userEvent.type(await screen.findByLabelText('Message'), 'How many brake pads?{Enter}')
 
     expect(await screen.findByText('6 brake pads available (BP-2207).')).toBeInTheDocument()
-    expect(screen.getByText('check_stock · ok')).toBeInTheDocument()
+    expect(screen.getByText('Checked stock')).toBeInTheDocument()
     expect(requests.at(-1)).toEqual({
       path: '/api/sessions/s1/messages',
       body: { text: 'How many brake pads?' },
@@ -81,5 +82,40 @@ describe('MAIA chat', () => {
     await userEvent.type(await screen.findByLabelText('Message'), 'Hi{Enter}')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('The AI model is unavailable')
+  })
+
+  it('shows readings and work orders in the side panel', async () => {
+    routes['/api/sessions/s1/messages'] = () =>
+      reply('4 mm is below the minimum.', {
+        events: [
+          {
+            name: 'log_step',
+            ok: true,
+            confirmed: null,
+            result: {
+              step_log_id: 1,
+              procedure_code: 'PROC-BRK-01',
+              step: 4,
+              reading: 4,
+              unit: 'mm',
+              assessment: {
+                reading: 4,
+                unit: 'mm',
+                band: 'below_minimum',
+                limits: 'warning 7, minimum 5, critical 3 mm',
+                withdraw_from_service: false,
+                work_order_priority: 'high',
+              },
+            },
+          },
+        ],
+      })
+    render(<App />)
+
+    await userEvent.type(await screen.findByLabelText('Message'), 'Left pad is 4 mm{Enter}')
+
+    const panel = await screen.findByRole('complementary', { name: 'Job overview' })
+    expect(await within(panel).findByText('Below minimum')).toBeInTheDocument()
+    expect(within(panel).getByText('4 mm')).toBeInTheDocument()
   })
 })

@@ -6,6 +6,53 @@ export type ToolEvent = {
   name: string
   ok: boolean
   confirmed: boolean | null
+  // What the tool returned (JSON). Its shape depends on the tool; see the types below.
+  result?: unknown
+}
+
+export type Band = 'within_limits' | 'below_warning' | 'below_minimum' | 'at_or_below_critical'
+
+export type Priority = 'low' | 'medium' | 'high'
+
+export type Assessment = {
+  reading: number
+  unit: string
+  band: Band
+  limits: string
+  withdraw_from_service: boolean
+  work_order_priority: Priority | null
+}
+
+export type AssetInfo = {
+  asset_id: string
+  vehicle_id: string
+  vehicle_status: 'in_service' | 'out_of_service'
+  name: string
+  open_work_orders: number
+}
+
+export type StepLogged = {
+  step_log_id: number
+  procedure_code: string
+  step: number
+  reading: number | null
+  unit: string | null
+  assessment: Assessment | null
+}
+
+export type WorkOrderInfo = {
+  work_order_id: number
+  asset_id: string | null
+  vehicle_id: string
+  procedure_code: string
+  priority: Priority
+  description: string
+}
+
+export type ReservationInfo = {
+  work_order_id: number
+  part_number: string
+  quantity: number
 }
 
 export type PendingAction = {
