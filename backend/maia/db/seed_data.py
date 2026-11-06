@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from maia.db.models import Asset, Part, Vehicle, VehicleStatus
+from maia.db.models import Asset, MeasurementLimit, Part, Vehicle, VehicleStatus
 
 DEPOT = "Mons North Depot (fictional)"
 VEHICLE_IDS = ("RV200-014", "RV200-027")
@@ -61,4 +61,56 @@ def parts() -> list[Part]:
             location=location,
         )
         for part_number, name, on_hand, location in stock
+    ]
+
+
+def measurement_limits() -> list[MeasurementLimit]:
+    """Limits copied from the RV-200 manual, one row per measured step. Measurements whose
+    limits are a range (door opening time, flange height) have no SAF-02 bands and are left to
+    the manual."""
+    return [
+        MeasurementLimit(
+            procedure_code="PROC-BRK-01",
+            step=4,
+            measurement="brake pad friction material thickness",
+            unit="mm",
+            warning=7,
+            minimum=5,
+            critical=3,
+            part_number="BP-2207",
+            part_quantity=2,
+        ),
+        MeasurementLimit(
+            procedure_code="PROC-WHL-02",
+            step=3,
+            measurement="wheel flange thickness",
+            unit="mm",
+            warning=27.5,
+            minimum=26,
+            critical=24,
+            part_number=None,
+            part_quantity=None,
+        ),
+        MeasurementLimit(
+            procedure_code="PROC-PAN-03",
+            step=4,
+            measurement="pantograph carbon strip thickness",
+            unit="mm",
+            warning=8,
+            minimum=5,
+            critical=3,
+            part_number="CS-1130",
+            part_quantity=1,
+        ),
+        MeasurementLimit(
+            procedure_code="PROC-BAT-04",
+            step=3,
+            measurement="battery standby voltage",
+            unit="V",
+            warning=100,
+            minimum=96,
+            critical=90,
+            part_number=None,
+            part_quantity=None,
+        ),
     ]

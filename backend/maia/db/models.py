@@ -145,3 +145,26 @@ class ManualChunk(Base):
     title: Mapped[str] = mapped_column(String(200))
     content: Mapped[str] = mapped_column(Text)
     embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIMENSIONS))
+
+
+class MeasurementLimit(Base):
+    """The manual's limits for a measured procedure step, as data, so readings are classified
+    by code rather than by the language model. Lower readings are worse (wear, voltage)."""
+
+    __tablename__ = "measurement_limits"
+    __table_args__ = (
+        CheckConstraint("critical < minimum AND minimum < warning", name="limits_ordered"),
+        CheckConstraint(
+            "part_quantity IS NULL OR part_quantity > 0", name="part_quantity_positive"
+        ),
+    )
+
+    procedure_code: Mapped[str] = mapped_column(String(20), primary_key=True)
+    step: Mapped[int] = mapped_column(primary_key=True)
+    measurement: Mapped[str] = mapped_column(String(100))
+    unit: Mapped[str] = mapped_column(String(10))
+    warning: Mapped[float]
+    minimum: Mapped[float]
+    critical: Mapped[float]
+    part_number: Mapped[str | None] = mapped_column(ForeignKey("parts.part_number"))
+    part_quantity: Mapped[int | None]
