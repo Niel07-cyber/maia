@@ -25,6 +25,10 @@ class LLMResponse:
     raw_message: dict[str, Any] = field(default_factory=dict)
 
 
+class ModelUnavailableError(Exception):
+    """The model provider could not answer (busy, rate limited, bad key, unknown model)."""
+
+
 class ChatModel(Protocol):
     def complete(
         self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]
@@ -42,17 +46,21 @@ class LiteLLMChat:
 
     def complete(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> LLMResponse:
         import litellm  # slow to import; only needed for real calls
+        import openai
 
         logging.getLogger("LiteLLM").setLevel(logging.WARNING)
         options = {} if self.temperature is None else {"temperature": self.temperature}
-        response = litellm.completion(
-            model=self.model,
-            messages=messages,
-            tools=tools,
-            api_key=self.api_key,
-            num_retries=3,
-            **options,
-        )
+        try:
+            response = litellm.completion(
+                model=self.model,
+                messages=messages,
+                tools=tools,
+                api_key=self.api_key,
+                num_retries=3,
+                **options,
+            )
+        except openai.APIError as exc:  # every LiteLLM provider error derives from this
+            raise ModelUnavailableError(str(exc)) from exc
         message = response.choices[0].message
         tool_calls = [
             ToolCall(
