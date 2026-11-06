@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import Callable
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -36,6 +36,7 @@ class EventOut(BaseModel):
     name: str
     ok: bool
     confirmed: bool | None
+    result: Any  # what the tool returned, so the UI can show readings and work orders
 
 
 class PendingOut(BaseModel):
@@ -52,7 +53,10 @@ class ChatReply(BaseModel):
     def from_agent(cls, reply: AgentReply) -> "ChatReply":
         return cls(
             text=reply.text,
-            events=[EventOut(name=e.name, ok=e.ok, confirmed=e.confirmed) for e in reply.events],
+            events=[
+                EventOut(name=e.name, ok=e.ok, confirmed=e.confirmed, result=e.result)
+                for e in reply.events
+            ],
             pending=[PendingOut(tool=p.tool, description=p.description) for p in reply.pending],
         )
 

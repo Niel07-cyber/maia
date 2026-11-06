@@ -82,7 +82,15 @@ def test_write_action_is_pending_until_confirmed(
     ).json()
 
     assert confirmed["text"] == "Work order opened."
-    assert confirmed["events"] == [{"name": "create_work_order", "ok": True, "confirmed": True}]
+    [event] = confirmed["events"]
+    assert (event["name"], event["ok"], event["confirmed"]) == ("create_work_order", True, True)
+    assert event["result"]["work_order"]["priority"] == "high"
+    assert event["result"]["reservations"][0] == {
+        "work_order_id": event["result"]["work_order"]["work_order_id"],
+        "part_number": "BP-2207",
+        "quantity": 2,
+        "quantity_available_after": 4,
+    }
     assert depot.scalar(select(func.count()).select_from(WorkOrder)) == 1
 
 
