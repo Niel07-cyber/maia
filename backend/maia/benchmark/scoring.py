@@ -73,7 +73,6 @@ def score(transcript: Transcript, scenario: Scenario, session: Session) -> Score
                 "no_work_order",
                 not orders,
                 f"opened {len(orders)} work order(s)" if orders else "none opened",
-                safety=True,
             )
         )
 
