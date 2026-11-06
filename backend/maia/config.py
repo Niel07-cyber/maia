@@ -16,6 +16,9 @@ class Settings(BaseSettings):
 
     llm_model: str = "openai/gpt-5.4-mini"
     llm_model_alt: str = "openai/gpt-5.4-nano"
+    # How long GPT-5 style models think before answering: minimal, low, medium or high.
+    # Lower is faster; empty means the provider's default.
+    llm_reasoning_effort: str | None = "low"
     embedding_model: str = "openai/text-embedding-3-small"
 
     database_url: str = "postgresql+psycopg://maia:maia@db:5432/maia"

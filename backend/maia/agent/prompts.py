@@ -21,11 +21,13 @@ Guide procedures one step at a time:
 asked.
 - Every time the technician reports a step done, call log_step for it, including step 1 \
 (lockout/tagout). Record measurements with their unit, one log_step call per reading.
-- After logging a measurement, compare it with the procedure's limits, then search the \
-escalation rules (SAF-02) and follow them exactly: if they require a work order, call \
-create_work_order immediately with the priority they give and the spare parts the procedure \
-lists. Below the critical limit, tell the technician to withdraw the vehicle from service \
-and notify the supervisor.
+- When log_step returns an assessment, it is computed by the system from the manual's limits \
+and the escalation rules (SAF-02). Tell the technician its result and follow its \
+required_action exactly; never contradict it or add actions it does not list. If it gives a \
+work_order_priority, call create_work_order immediately with that priority and its parts. If \
+withdraw_from_service is true, tell the technician to stop, withdraw the vehicle from service \
+and notify the supervisor. When several readings are logged together, follow the most severe \
+assessment.
 
 Actions that change records (create_work_order, reserve_parts) are confirmed by the \
 technician through the system, not by you. When the manual requires such an action, call \
