@@ -6,28 +6,9 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --bg: #f7f7f5;
-  --surface: #ffffff;
   --border: oklch(0.922 0 0);
-  --chip: #eeede8;
   --muted: oklch(0.97 0 0);
   --accent: oklch(0.97 0 0);
-  --success-bg: #eaf3de;
-  --success-text: #27500a;
-  --warning-bg: #faeeda;
-  --warning-border: #ef9f27;
-  --warning-text: #633806;
-  --error-bg: #fcebeb;
-  --error-text: #791f1f;
-  color-scheme: light dark;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  color: #2c2c2a;
-  background: var(--bg);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -57,54 +38,6 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1c1c1a;
-    --surface: #2c2c2a;
-    --border: #444441;
-    --chip: #3a3a37;
-    --muted: #b4b2a9;
-    --accent: #378add;
-    --success-bg: #173404;
-    --success-text: #c0dd97;
-    --warning-bg: #412402;
-    --warning-border: #ba7517;
-    --warning-text: #fac775;
-    --error-bg: #501313;
-    --error-text: #f7c1c1;
-    color: #f1efe8;
-  }
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-button {
-  font: inherit;
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: inherit;
-  cursor: pointer;
-}
-
-button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 @theme inline {
@@ -193,5 +126,53 @@ button:disabled {
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* ---------- MAIA theme ----------
+   Rail blue for structure, hi-vis yellow for anything that needs the technician's attention,
+   and the four signal colours for the assessment bands. Kept last so it overrides the defaults. */
+
+@theme inline {
+  --font-sans: 'Rethink Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Unbounded Variable', ui-sans-serif, system-ui, sans-serif;
+  --color-hivis: var(--hivis);
+  --color-ink: var(--ink);
+  --color-signal-green: var(--signal-green);
+  --color-signal-amber: var(--signal-amber);
+  --color-signal-orange: var(--signal-orange);
+  --color-signal-red: var(--signal-red);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: #f2f4f7;
+  --foreground: #14213a;
+  --card: #ffffff;
+  --card-foreground: #14213a;
+  --primary: #1f3c6e;
+  --primary-foreground: #ffffff;
+  --secondary: #e3e9f2;
+  --secondary-foreground: #1f3c6e;
+  --muted: #e9edf3;
+  --muted-foreground: #5a677b;
+  --accent: #e3e9f2;
+  --accent-foreground: #14213a;
+  --destructive: #c8372d;
+  --border: #d9dfe8;
+  --input: #d9dfe8;
+  --ring: #f2b705;
+  --ink: #14213a;
+  --hivis: #f5c400;
+  --signal-green: #1e9e5a;
+  --signal-amber: #e5a00d;
+  --signal-orange: #e2711d;
+  --signal-red: #d33a2c;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
 }
