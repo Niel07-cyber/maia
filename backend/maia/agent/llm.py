@@ -17,12 +17,23 @@ class ToolCall:
 
 
 @dataclass(frozen=True)
+class Usage:
+    """Tokens used by one model call, and its price in US dollars when the provider's
+    prices are known."""
+
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    cost_usd: float | None = None
+
+
+@dataclass(frozen=True)
 class LLMResponse:
     content: str | None
     tool_calls: list[ToolCall] = field(default_factory=list)
     # The assistant message exactly as the provider returned it. It is sent back on the next
     # turn unchanged, so provider-specific details are preserved.
     raw_message: dict[str, Any] = field(default_factory=dict)
+    usage: Usage | None = None
 
 
 class ModelUnavailableError(Exception):
@@ -79,4 +90,18 @@ class LiteLLMChat:
             content=message.content,
             tool_calls=tool_calls,
             raw_message=message.model_dump(exclude_none=True),
+            usage=_usage(response),
         )
+
+
+def _usage(response: Any) -> Usage | None:
+    import litellm
+
+    tokens = getattr(response, "usage", None)
+    if tokens is None:
+        return None
+    try:
+        cost: float | None = litellm.completion_cost(completion_response=response)
+    except Exception:  # unknown price for this model: keep the token counts anyway
+        cost = None
+    return Usage(tokens.prompt_tokens or 0, tokens.completion_tokens or 0, cost)
