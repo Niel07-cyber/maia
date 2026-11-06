@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from maia.api import health
+from maia.api import chat, demo, health
 from maia.config import get_settings
 
 
@@ -18,6 +18,8 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(health.router)
+    app.include_router(chat.router)
+    app.include_router(demo.router)
     return app
 
 
