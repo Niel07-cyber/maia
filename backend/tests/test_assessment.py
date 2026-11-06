@@ -8,6 +8,7 @@ from maia.db.seed import seed
 from maia.tools.assessment import Band, assess
 from maia.tools.errors import ToolError
 from maia.tools.steps import log_step
+from maia.tools.work_orders import create_work_order
 
 BRAKE_PADS = MeasurementLimit(
     procedure_code="PROC-BRK-01",
@@ -104,3 +105,47 @@ def test_seed_loads_the_limits_once(db_session: Session) -> None:
 
     count = db_session.scalar(select(func.count()).select_from(MeasurementLimit))
     assert count == len(seed_data.measurement_limits())
+
+
+def log_brake_pad(session: Session, reading: float, session_id: str = "s1") -> None:
+    log_step(
+        session,
+        session_id=session_id,
+        vehicle_id="RV200-014",
+        asset_id="RV200-014-B2",
+        procedure_code="PROC-BRK-01",
+        step=4,
+        reading=reading,
+        unit="mm",
+    )
+
+
+def open_brake_work_order(session: Session, session_id: str = "s1") -> None:
+    create_work_order(
+        session,
+        session_id=session_id,
+        vehicle_id="RV200-014",
+        procedure_code="PROC-BRK-01",
+        priority=Priority.MEDIUM,
+        description="Replace brake pads",
+    )
+
+
+def test_no_work_order_once_a_reading_withdraws_the_vehicle(depot: Session) -> None:
+    log_brake_pad(depot, 6)  # below warning: on its own this would need a work order
+    log_brake_pad(depot, 2)  # critical: the procedure stops here
+
+    with pytest.raises(ToolError, match="must be withdrawn from service"):
+        open_brake_work_order(depot)
+
+
+def test_work_orders_are_still_allowed_below_the_minimum(depot: Session) -> None:
+    log_brake_pad(depot, 4)
+
+    open_brake_work_order(depot)  # does not raise
+
+
+def test_a_withdrawal_in_another_session_does_not_block(depot: Session) -> None:
+    log_brake_pad(depot, 2, session_id="other")
+
+    open_brake_work_order(depot, session_id="s1")  # does not raise
