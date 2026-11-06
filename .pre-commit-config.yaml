@@ -30,3 +30,9 @@ repos:
         language: system
         pass_filenames: false
         files: ^backend/
+      - id: frontend-checks
+        name: frontend lint, format, types and tests
+        entry: bash -c 'cd frontend && npm run lint && npm run format:check && npm run typecheck && npm test'
+        language: system
+        pass_filenames: false
+        files: ^frontend/
