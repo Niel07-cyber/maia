@@ -9,7 +9,7 @@ import {
   type ChatReply,
   type PendingAction,
 } from '@/api'
-import { ArrowUp, HardHat, Package, RotateCcw, Wrench } from 'lucide-react'
+import { ArrowUp, HardHat, Moon, Package, RotateCcw, Sun, Wrench } from 'lucide-react'
 
 import { BenchmarkPage } from '@/benchmark/BenchmarkPage'
 import { Avatar } from '@/components/Avatar'
@@ -19,6 +19,7 @@ import { WorkspacePanel } from '@/components/WorkspacePanel'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { useTheme } from '@/lib/theme'
 import { applyEvents, EMPTY_WORKSPACE, type Workspace } from '@/lib/workspace'
 
 const SUGGESTIONS = [
@@ -53,6 +54,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [workspace, setWorkspace] = useState<Workspace>(EMPTY_WORKSPACE)
   const [view, setView] = useState<View>(currentView)
+  const [theme, toggleTheme] = useTheme()
   const endRef = useRef<HTMLDivElement>(null)
   const started = useRef(false)
 
@@ -139,12 +141,12 @@ export default function App() {
 
   return (
     <div className="flex h-dvh flex-col bg-background text-foreground">
-      <header className="flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground sm:px-6">
+      <header className="flex items-center justify-between border-b bg-chrome px-4 py-3 text-chrome-foreground sm:px-6">
         <div className="flex items-center gap-3">
           <Avatar className="size-9" />
           <div>
             <h1 className="font-display text-lg leading-none font-semibold tracking-tight">MAIA</h1>
-            <p className="mt-1 text-xs text-primary-foreground/70">
+            <p className="mt-1 text-xs text-chrome-foreground/70">
               Maintenance assistant for the RV-200 demo depot
             </p>
           </div>
@@ -164,21 +166,31 @@ export default function App() {
                 className={cn(
                   'rounded-md px-3 py-1 font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-hivis',
                   view === id
-                    ? 'bg-hivis text-ink'
-                    : 'text-primary-foreground/80 hover:text-primary-foreground',
+                    ? 'bg-hivis text-hivis-foreground'
+                    : 'text-chrome-foreground/80 hover:text-chrome-foreground',
                 )}
               >
                 {label}
               </a>
             ))}
           </nav>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to night shift mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Night shift mode'}
+            className="text-chrome-foreground hover:bg-white/10 hover:text-chrome-foreground"
+          >
+            {theme === 'dark' ? <Sun aria-hidden /> : <Moon aria-hidden />}
+          </Button>
           {view === 'assistant' && (
             <Button
               variant="outline"
               size="sm"
               onClick={reset}
               disabled={busy}
-              className="border-white/25 bg-white/5 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+              className="border-white/25 bg-white/5 text-chrome-foreground hover:bg-white/15 hover:text-chrome-foreground dark:bg-white/5"
             >
               <RotateCcw aria-hidden />
               Reset demo

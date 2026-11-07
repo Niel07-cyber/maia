@@ -37,7 +37,7 @@ const MARKDOWN = cn(
   'text-[15px] leading-relaxed',
   '[&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_p]:my-2.5',
   '[&_ul]:my-2.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2.5 [&_ol]:list-decimal [&_ol]:pl-5',
-  '[&_li]:my-1 [&_li]:marker:text-primary/60 [&_strong]:font-semibold [&_strong]:text-primary',
+  '[&_li]:my-1 [&_li]:marker:text-primary/60 [&_strong]:font-semibold [&_strong]:text-primary dark:[&_strong]:text-foreground',
   '[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:text-[0.9em]',
   '[&_blockquote]:border-l-2 [&_blockquote]:border-hivis [&_blockquote]:pl-3',
 )
@@ -50,7 +50,7 @@ export function MessageBubble({ message }: { message: Message }) {
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
-        <p className="max-w-[80%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-[15px] whitespace-pre-wrap text-primary-foreground shadow-sm">
+        <p className="max-w-[80%] rounded-2xl rounded-br-sm bg-chrome px-4 py-2.5 text-[15px] whitespace-pre-wrap text-chrome-foreground shadow-sm">
           {message.text}
         </p>
       </div>
