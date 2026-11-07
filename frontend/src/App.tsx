@@ -11,12 +11,14 @@ import {
 } from '@/api'
 import { ArrowUp, HardHat, Package, RotateCcw, Wrench } from 'lucide-react'
 
+import { BenchmarkPage } from '@/benchmark/BenchmarkPage'
 import { Avatar } from '@/components/Avatar'
 import { MessageBubble, type Message } from '@/components/MessageBubble'
 import { PendingCard } from '@/components/PendingCard'
 import { WorkspacePanel } from '@/components/WorkspacePanel'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 import { applyEvents, EMPTY_WORKSPACE, type Workspace } from '@/lib/workspace'
 
 const SUGGESTIONS = [
@@ -35,6 +37,13 @@ const SUGGESTIONS = [
 
 let nextId = 1
 
+type View = 'assistant' | 'benchmark'
+
+// The view lives in the URL hash, so the benchmark page has a link of its own.
+function currentView(): View {
+  return window.location.hash === '#benchmark' ? 'benchmark' : 'assistant'
+}
+
 export default function App() {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -43,8 +52,15 @@ export default function App() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [workspace, setWorkspace] = useState<Workspace>(EMPTY_WORKSPACE)
+  const [view, setView] = useState<View>(currentView)
   const endRef = useRef<HTMLDivElement>(null)
   const started = useRef(false)
+
+  useEffect(() => {
+    const onHashChange = () => setView(currentView())
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
 
   useEffect(() => {
     endRef.current?.scrollIntoView?.({ behavior: 'smooth' })
@@ -133,120 +149,152 @@ export default function App() {
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={reset}
-          disabled={busy}
-          className="border-white/25 bg-white/5 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
-        >
-          <RotateCcw aria-hidden />
-          Reset demo
-        </Button>
+        <div className="flex items-center gap-2 sm:gap-4">
+          <nav aria-label="Pages" className="flex rounded-lg bg-white/10 p-1 text-sm">
+            {(
+              [
+                ['assistant', 'Assistant', '#'],
+                ['benchmark', 'Benchmark', '#benchmark'],
+              ] as const
+            ).map(([id, label, href]) => (
+              <a
+                key={id}
+                href={href}
+                aria-current={view === id ? 'page' : undefined}
+                className={cn(
+                  'rounded-md px-3 py-1 font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-hivis',
+                  view === id
+                    ? 'bg-hivis text-ink'
+                    : 'text-primary-foreground/80 hover:text-primary-foreground',
+                )}
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+          {view === 'assistant' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={reset}
+              disabled={busy}
+              className="border-white/25 bg-white/5 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+            >
+              <RotateCcw aria-hidden />
+              Reset demo
+            </Button>
+          )}
+        </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <section className="flex min-h-0 flex-col">
-          <main className="flex-1 overflow-y-auto" aria-live="polite">
-            <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
-              {messages.length === 0 && (
-                <div className="pt-10">
-                  <h2 className="max-w-xl font-display text-3xl leading-tight font-semibold tracking-tight text-primary sm:text-4xl">
-                    What are you working on today?
-                  </h2>
-                  <p className="mt-3 max-w-lg text-[15px] text-muted-foreground">
-                    MAIA walks you through RV-200 procedures one step at a time, straight from the
-                    manual, and asks before it changes anything.
-                  </p>
-                  <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                    {SUGGESTIONS.map(({ icon: Icon, title, text }) => (
-                      <button
-                        key={title}
-                        type="button"
-                        disabled={!sessionId || busy}
-                        onClick={() => send(text)}
-                        className="flex flex-col items-start gap-3 rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors outline-none hover:border-primary/40 focus-visible:ring-[3px] focus-visible:ring-ring/60 disabled:opacity-50"
-                      >
-                        <span className="flex size-9 items-center justify-center rounded-lg bg-secondary text-primary">
-                          <Icon className="size-5" aria-hidden />
-                        </span>
-                        <span>
-                          <span className="block text-sm font-semibold text-ink">{title}</span>
-                          <span className="mt-1 block text-sm text-muted-foreground">{text}</span>
-                        </span>
-                      </button>
-                    ))}
+      {view === 'benchmark' ? (
+        <main className="min-h-0 flex-1 overflow-y-auto">
+          <BenchmarkPage />
+        </main>
+      ) : (
+        <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <section className="flex min-h-0 flex-col">
+            <main className="flex-1 overflow-y-auto" aria-live="polite">
+              <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
+                {messages.length === 0 && (
+                  <div className="pt-10">
+                    <h2 className="max-w-xl font-display text-3xl leading-tight font-semibold tracking-tight text-primary sm:text-4xl">
+                      What are you working on today?
+                    </h2>
+                    <p className="mt-3 max-w-lg text-[15px] text-muted-foreground">
+                      MAIA walks you through RV-200 procedures one step at a time, straight from the
+                      manual, and asks before it changes anything.
+                    </p>
+                    <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                      {SUGGESTIONS.map(({ icon: Icon, title, text }) => (
+                        <button
+                          key={title}
+                          type="button"
+                          disabled={!sessionId || busy}
+                          onClick={() => send(text)}
+                          className="flex flex-col items-start gap-3 rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors outline-none hover:border-primary/40 focus-visible:ring-[3px] focus-visible:ring-ring/60 disabled:opacity-50"
+                        >
+                          <span className="flex size-9 items-center justify-center rounded-lg bg-secondary text-primary">
+                            <Icon className="size-5" aria-hidden />
+                          </span>
+                          <span>
+                            <span className="block text-sm font-semibold text-ink">{title}</span>
+                            <span className="mt-1 block text-sm text-muted-foreground">{text}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-              {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
-              ))}
-              {pending.length > 0 && (
-                <PendingCard actions={pending} busy={busy} onAnswer={answer} />
-              )}
-              {busy && (
-                <div className="flex items-center gap-3">
-                  <Avatar />
-                  <span className="flex items-center gap-1" aria-label="MAIA is working">
-                    {[0, 150, 300].map((delay) => (
-                      <span
-                        key={delay}
-                        className="size-2 rounded-full bg-primary/60 motion-safe:animate-bounce"
-                        style={{ animationDelay: `${delay}ms` }}
-                      />
-                    ))}
-                  </span>
-                </div>
-              )}
-              {error && (
-                <p
-                  role="alert"
-                  className="rounded-xl border border-destructive/30 bg-card px-4 py-3 text-sm text-destructive"
+                )}
+                {messages.map((message) => (
+                  <MessageBubble key={message.id} message={message} />
+                ))}
+                {pending.length > 0 && (
+                  <PendingCard actions={pending} busy={busy} onAnswer={answer} />
+                )}
+                {busy && (
+                  <div className="flex items-center gap-3">
+                    <Avatar />
+                    <span className="flex items-center gap-1" aria-label="MAIA is working">
+                      {[0, 150, 300].map((delay) => (
+                        <span
+                          key={delay}
+                          className="size-2 rounded-full bg-primary/60 motion-safe:animate-bounce"
+                          style={{ animationDelay: `${delay}ms` }}
+                        />
+                      ))}
+                    </span>
+                  </div>
+                )}
+                {error && (
+                  <p
+                    role="alert"
+                    className="rounded-xl border border-destructive/30 bg-card px-4 py-3 text-sm text-destructive"
+                  >
+                    {error}
+                  </p>
+                )}
+                <div ref={endRef} />
+              </div>
+            </main>
+
+            <form onSubmit={onSubmit} className="mx-auto w-full max-w-3xl px-4 pb-4 sm:px-6">
+              <div className="flex items-end gap-2 rounded-2xl border bg-card p-2 shadow-md focus-within:border-hivis focus-within:ring-[3px] focus-within:ring-hivis/30">
+                <label htmlFor="message" className="sr-only">
+                  Message
+                </label>
+                <Textarea
+                  id="message"
+                  rows={1}
+                  maxLength={2000}
+                  placeholder={
+                    pending.length > 0 ? 'Or reply instead of confirming…' : 'Message MAIA…'
+                  }
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={onKeyDown}
+                  disabled={!sessionId}
+                  className="max-h-40 min-h-10 resize-none border-0 bg-transparent text-[15px] shadow-none focus-visible:ring-0 md:text-[15px] dark:bg-transparent"
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  aria-label="Send"
+                  className="size-10 shrink-0 rounded-xl"
+                  disabled={!input.trim() || !sessionId || busy}
                 >
-                  {error}
-                </p>
-              )}
-              <div ref={endRef} />
-            </div>
-          </main>
+                  <ArrowUp aria-hidden />
+                </Button>
+              </div>
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                Demo with fictional data. Always follow your site's real procedures.
+              </p>
+            </form>
+          </section>
 
-          <form onSubmit={onSubmit} className="mx-auto w-full max-w-3xl px-4 pb-4 sm:px-6">
-            <div className="flex items-end gap-2 rounded-2xl border bg-card p-2 shadow-md focus-within:border-hivis focus-within:ring-[3px] focus-within:ring-hivis/30">
-              <label htmlFor="message" className="sr-only">
-                Message
-              </label>
-              <Textarea
-                id="message"
-                rows={1}
-                maxLength={2000}
-                placeholder={
-                  pending.length > 0 ? 'Or reply instead of confirming…' : 'Message MAIA…'
-                }
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={onKeyDown}
-                disabled={!sessionId}
-                className="max-h-40 min-h-10 resize-none border-0 bg-transparent text-[15px] shadow-none focus-visible:ring-0 md:text-[15px] dark:bg-transparent"
-              />
-              <Button
-                type="submit"
-                size="icon"
-                aria-label="Send"
-                className="size-10 shrink-0 rounded-xl"
-                disabled={!input.trim() || !sessionId || busy}
-              >
-                <ArrowUp aria-hidden />
-              </Button>
-            </div>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              Demo with fictional data. Always follow your site's real procedures.
-            </p>
-          </form>
-        </section>
-
-        <WorkspacePanel workspace={workspace} className="hidden border-l lg:block" />
-      </div>
+          <WorkspacePanel workspace={workspace} className="hidden border-l lg:block" />
+        </div>
+      )}
     </div>
   )
 }
