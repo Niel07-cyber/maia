@@ -16,7 +16,7 @@ export function PendingCard({ actions, busy, onAnswer }: Props) {
     >
       <div
         aria-hidden
-        className="h-2.5 bg-[repeating-linear-gradient(-45deg,var(--hivis)_0_12px,var(--ink)_12px_24px)]"
+        className="h-2.5 bg-[repeating-linear-gradient(-45deg,var(--hivis)_0_12px,var(--hivis-foreground)_12px_24px)]"
       />
       <div className="p-5">
         <h2 className="font-display text-sm font-semibold text-ink">Needs your confirmation</h2>

@@ -117,9 +117,9 @@ export function WorkspacePanel({
 
       <Section title="Asset">
         {asset ? (
-          <div className="rounded-xl bg-primary p-4 text-primary-foreground">
+          <div className="rounded-xl bg-chrome p-4 text-chrome-foreground">
             <p className="font-display text-base font-semibold">{asset.name}</p>
-            <p className="mt-0.5 text-sm text-primary-foreground/70">
+            <p className="mt-0.5 text-sm text-chrome-foreground/70">
               {asset.asset_id} on {asset.vehicle_id}
             </p>
             <p className="mt-3 flex items-center gap-2 text-sm font-medium">

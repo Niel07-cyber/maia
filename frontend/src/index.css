@@ -130,13 +130,17 @@
 }
 
 /* ---------- MAIA theme ----------
-   Rail blue for structure, hi-vis yellow for anything that needs the technician's attention,
-   and the four signal colours for the assessment bands. Kept last so it overrides the defaults. */
+   Graphite for structure, hi-vis yellow for anything that needs the technician's attention,
+   and the four signal colours for the assessment bands. A dark "night shift" variant below.
+   Kept last so it overrides the defaults. */
 
 @theme inline {
   --font-sans: 'Rethink Sans Variable', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Unbounded Variable', ui-sans-serif, system-ui, sans-serif;
+  --color-chrome: var(--chrome);
+  --color-chrome-foreground: var(--chrome-foreground);
   --color-hivis: var(--hivis);
+  --color-hivis-foreground: var(--hivis-foreground);
   --color-ink: var(--ink);
   --color-signal-green: var(--signal-green);
   --color-signal-amber: var(--signal-amber);
@@ -146,28 +150,54 @@
 
 :root {
   --radius: 0.75rem;
-  --background: #f2f4f7;
-  --foreground: #14213a;
+  --background: #eff0f2;
+  --foreground: #1d2025;
   --card: #ffffff;
-  --card-foreground: #14213a;
-  --primary: #1f3c6e;
+  --card-foreground: #1d2025;
+  --primary: #2a2e35;
   --primary-foreground: #ffffff;
-  --secondary: #e3e9f2;
-  --secondary-foreground: #1f3c6e;
-  --muted: #e9edf3;
-  --muted-foreground: #5a677b;
-  --accent: #e3e9f2;
-  --accent-foreground: #14213a;
+  --secondary: #e6e7ea;
+  --secondary-foreground: #2a2e35;
+  --muted: #eaebee;
+  --muted-foreground: #5d626b;
+  --accent: #e6e7ea;
+  --accent-foreground: #1d2025;
   --destructive: #c8372d;
-  --border: #d9dfe8;
-  --input: #d9dfe8;
+  --border: #dadce0;
+  --input: #dadce0;
   --ring: #f2b705;
-  --ink: #14213a;
+  --ink: #1d2025;
+  --chrome: #2a2e35;
+  --chrome-foreground: #ffffff;
   --hivis: #f5c400;
+  --hivis-foreground: #1d2025;
   --signal-green: #1e9e5a;
   --signal-amber: #e5a00d;
   --signal-orange: #e2711d;
   --signal-red: #d33a2c;
+}
+
+/* Night shift: in the dark, the hi-vis yellow becomes the action colour. */
+.dark {
+  --background: #16181c;
+  --foreground: #e9eaec;
+  --card: #1f2227;
+  --card-foreground: #e9eaec;
+  --primary: #f5c400;
+  --primary-foreground: #16181c;
+  --secondary: #2b2f36;
+  --secondary-foreground: #f5c400;
+  --muted: #262a30;
+  --muted-foreground: #9aa0a8;
+  --accent: #2b2f36;
+  --accent-foreground: #e9eaec;
+  --destructive: #f0605a;
+  --border: #30343b;
+  --input: #30343b;
+  --ink: #f3f4f5;
+  --chrome: #2b2f36;
+  --chrome-foreground: #f3f4f5;
+  color-scheme: dark;
 }
 
 @layer base {
