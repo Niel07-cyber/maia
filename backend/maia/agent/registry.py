@@ -237,3 +237,12 @@ def clean_schema(schema: dict[str, Any]) -> dict[str, Any]:
 
     cleaned: dict[str, Any] = resolve(schema)
     return cleaned
+
+
+def to_json(result: ToolResult) -> Any:
+    """A tool result as plain JSON data, for the LLM, the API and MCP clients."""
+    if isinstance(result, BaseModel):
+        return result.model_dump(mode="json")
+    if isinstance(result, list):
+        return [item.model_dump(mode="json") for item in result]
+    return result

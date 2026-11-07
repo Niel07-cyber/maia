@@ -9,12 +9,12 @@ from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from typing import Any
 
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from maia.agent.llm import ChatModel, ToolCall
 from maia.agent.prompts import SYSTEM_PROMPT
-from maia.agent.registry import TOOLS, ToolContext, ToolResult
+from maia.agent.registry import TOOLS, ToolContext, to_json
 from maia.manual.embeddings import Embedder
 from maia.tools.errors import ToolError
 
@@ -136,7 +136,7 @@ class MaintenanceAgent:
             args = tool.args_model.model_validate(call.arguments)
             with self.transaction() as session:
                 ctx = ToolContext(session, self.embedder, conversation.session_id)
-                result: Any = _to_json(tool.run(ctx, args))
+                result: Any = to_json(tool.run(ctx, args))
             ok = True
         except ValidationError as exc:
             result = {"error": f"Invalid arguments: {exc.errors(include_url=False)}"}
@@ -176,11 +176,3 @@ class MaintenanceAgent:
                 "content": json.dumps(result),
             }
         )
-
-
-def _to_json(result: ToolResult) -> Any:
-    if isinstance(result, BaseModel):
-        return result.model_dump(mode="json")
-    if isinstance(result, list):
-        return [item.model_dump(mode="json") for item in result]
-    return result
