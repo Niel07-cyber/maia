@@ -72,7 +72,7 @@ def main() -> None:
     )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report(scenarios, args.repeats, results), indent=2))
+    args.output.write_text(json.dumps(report(scenarios, args.repeats, results), indent=2) + "\n")
 
     print()
     for summary in summarize(results):
