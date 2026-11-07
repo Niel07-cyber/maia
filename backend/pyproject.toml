@@ -16,6 +16,7 @@ dependencies = [
     "mcp>=2.3.0",
     "tenacity>=9.2.1",
     "openai>=3.45.0",
+    "pyyaml>=6.0.3",
 ]
 
 [dependency-groups]
@@ -25,6 +26,7 @@ dev = [
     "ruff>=0.8",
     "mypy>=1.13",
     "pre-commit>=4.0",
+    "types-pyyaml>=6.0.12.20261103",
 ]
 
 [build-system]

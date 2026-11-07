@@ -15,8 +15,10 @@ the minimum limit means medium, on the warning limit means within limits."""
 import enum
 
 from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from maia.db.models import MeasurementLimit, Priority
+from maia.db.models import MeasurementLimit, Priority, StepLog
 
 
 class Band(enum.StrEnum):
@@ -89,3 +91,27 @@ _REQUIRED_ACTION = {
         "the shift supervisor immediately (SAF-02)."
     ),
 }
+
+
+def withdrawing_reading(session: Session, session_id: str, vehicle_id: str) -> StepLog | None:
+    """The first reading logged in this session that put the vehicle at or below a critical
+    limit, if any. From then on the procedure is stopped (SAF-02)."""
+    readings = session.scalars(
+        select(StepLog)
+        .where(
+            StepLog.session_id == session_id,
+            StepLog.vehicle_id == vehicle_id,
+            StepLog.reading.is_not(None),
+        )
+        .order_by(StepLog.id)
+    )
+    for entry in readings:
+        limit = session.get(MeasurementLimit, (entry.procedure_code, entry.step))
+        if (
+            limit is not None
+            and entry.reading is not None
+            and entry.unit == limit.unit
+            and assess(limit, entry.reading).withdraw_from_service
+        ):
+            return entry
+    return None

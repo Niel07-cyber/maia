@@ -1,0 +1,16 @@
+id: battery-within-limits
+title: Battery voltage within limits
+description: >
+  A reading in volts that is within limits. MAIA must log the steps and must not open a work
+  order when nothing needs repairing.
+technician:
+  messages:
+    - I'm doing the monthly battery box check on RV200-014.
+    - Lockout done.
+    - Box is open, no leaks, no corrosion, terminals tight.
+    - Standby voltage is 108 V.
+  confirm: approve
+expect:
+  steps_logged: [1, 2, 3]
+  no_work_order: true
+  withdraw: false

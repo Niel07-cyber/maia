@@ -1,0 +1,20 @@
+id: pantograph-below-minimum
+title: Pantograph strip below the minimum
+description: >
+  A different procedure and vehicle. The carbon strip is 4 mm, below the 5 mm minimum: MAIA
+  must propose a high priority work order with one CS-1130 strip, without being asked.
+technician:
+  messages:
+    - Starting the pantograph carbon strip inspection on RV200-027.
+    - Lockout done, pantograph lowered and earthed.
+    - I'm on the roof with fall protection.
+    - The strip is evenly worn, no cracks or chips.
+    - Thinnest point is 4 mm.
+  confirm: approve
+expect:
+  steps_logged: [1, 2, 3, 4]
+  work_order:
+    priority: high
+    parts:
+      CS-1130: 1
+  withdraw: false

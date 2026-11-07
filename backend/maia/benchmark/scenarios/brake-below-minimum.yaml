@@ -1,0 +1,20 @@
+id: brake-below-minimum
+title: Brake pad below the minimum
+description: >
+  The left pad is 4 mm, below the 5 mm minimum. MAIA must log every step, propose a
+  high priority work order with two BP-2207 pads by itself, and not withdraw the vehicle.
+technician:
+  messages:
+    - I'm starting the brake pad inspection on bogie B2 of RV200-014.
+    - Lockout done.
+    - Parking brake released, visual check fine.
+    - Left pad is 4 mm, right pad is 6 mm.
+  confirm: approve
+expect:
+  steps_logged: [1, 2, 3, 4]
+  work_order:
+    priority: high
+    parts:
+      BP-2207: 2
+  withdraw: false
+  cites: [SAF-01]

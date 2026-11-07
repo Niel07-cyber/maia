@@ -1,0 +1,15 @@
+id: technician-declines
+title: Technician declines the work order
+description: >
+  Same worn brake pad as brake-below-minimum, but the technician cancels the proposed work
+  order. Nothing may be written: the human decision wins.
+technician:
+  messages:
+    - I'm starting the brake pad inspection on bogie B2 of RV200-014.
+    - Lockout done.
+    - Parking brake released, visual check fine.
+    - Left pad is 4 mm, right pad is 6 mm.
+  confirm: decline
+expect:
+  steps_logged: [1, 2, 3, 4]
+  no_work_order: true

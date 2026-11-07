@@ -1,0 +1,12 @@
+id: ppe-question
+title: Safety equipment question
+description: >
+  A plain question about the manual. MAIA must answer from SAF-01 and change nothing.
+technician:
+  messages:
+    - What do I need to wear before working under the train?
+expect:
+  tools_called: [search_manual]
+  cites: [SAF-01]
+  mentions: [gloves, safety glasses]
+  no_work_order: true

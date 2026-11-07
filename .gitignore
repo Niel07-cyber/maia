@@ -17,6 +17,7 @@ dist/
 
 # Benchmark outputs
 bench/results/
+backend/results/
 
 # OS and editors
 .DS_Store
