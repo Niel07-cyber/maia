@@ -1,0 +1,28 @@
+# One address for the whole demo: Caddy gets a free HTTPS certificate from Let's Encrypt,
+# serves the React site, and forwards API calls to the backend container.
+{$MAIA_DOMAIN} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+
+	handle /health {
+		reverse_proxy backend:8000
+	}
+
+	handle {
+		root * /srv
+		# React handles its own pages: unknown paths get index.html.
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# The microphone is used by this site only.
+		Permissions-Policy "microphone=(self), camera=(), geolocation=()"
+	}
+}

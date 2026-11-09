@@ -1,0 +1,65 @@
+# Production: one server runs the database, the backend and Caddy (HTTPS + the website).
+#   docker compose -f docker-compose.prod.yml up -d --build
+# Needs a .env next to this file (see deploy/.env.production.example).
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: maia
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: maia
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U maia -d maia"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # No ports: only the other containers can reach the database.
+
+  migrate:
+    build: ./backend
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://maia:${POSTGRES_PASSWORD}@db:5432/maia
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://maia:${POSTGRES_PASSWORD}@db:5432/maia
+      FRONTEND_ORIGIN: https://${MAIA_DOMAIN}
+    # --proxy-headers: trust Caddy's X-Forwarded-For, so rate limits see each visitor.
+    command: >
+      uvicorn maia.main:app --host 0.0.0.0 --port 8000
+      --proxy-headers --forwarded-allow-ips=*
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    # No ports: Caddy is the only way in.
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      MAIA_DOMAIN: ${MAIA_DOMAIN:?set MAIA_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data # HTTPS certificates: keep them across restarts
+      - caddy_config:/config
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
