@@ -20,7 +20,7 @@ beforeEach(() => {
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       const path = new URL(url).pathname
-      const body = init?.body ? JSON.parse(String(init.body)) : undefined
+      const body = typeof init?.body === 'string' ? JSON.parse(init.body) : init?.body
       requests.push({ path, body })
       const route = routes[path]
       const { status = 200, json } = route ? route(body) : { status: 404, json: {} }
@@ -32,6 +32,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  localStorage.clear()
 })
 
 describe('MAIA chat', () => {
@@ -117,5 +118,68 @@ describe('MAIA chat', () => {
     const panel = await screen.findByRole('complementary', { name: 'Job overview' })
     expect(await within(panel).findByText('Below minimum')).toBeInTheDocument()
     expect(within(panel).getByText('4 mm')).toBeInTheDocument()
+  })
+
+  it('turns speech into a message', async () => {
+    class FakeRecorder {
+      mimeType = 'audio/webm'
+      stream = { getTracks: () => [{ stop: () => {} }] }
+      ondataavailable: ((event: { data: Blob }) => void) | null = null
+      onstop: (() => void) | null = null
+      start() {}
+      stop() {
+        this.ondataavailable?.({ data: new Blob(['audio'], { type: 'audio/webm' }) })
+        this.onstop?.()
+      }
+    }
+    vi.stubGlobal('MediaRecorder', FakeRecorder)
+    vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: async () => ({}) } })
+    routes['/api/transcribe'] = () => ({ json: { text: 'Left pad is 4 mm.' } })
+    routes['/api/sessions/s1/messages'] = () => reply('4 mm is below the minimum.')
+    render(<App />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Speak instead of typing' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Stop and send' }))
+
+    expect(await screen.findByText('4 mm is below the minimum.')).toBeInTheDocument()
+    expect(screen.getByText('Left pad is 4 mm.')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Spoken' })).toBeInTheDocument()
+    expect(requests.at(-1)).toEqual({
+      path: '/api/sessions/s1/messages',
+      body: { text: 'Left pad is 4 mm.' },
+    })
+  })
+
+  it('hides the microphone when the browser cannot record', async () => {
+    render(<App />)
+
+    await screen.findByRole('button', { name: 'Send' })
+    expect(screen.queryByRole('button', { name: 'Speak instead of typing' })).toBeNull()
+  })
+
+  it('reads replies aloud when asked', async () => {
+    const spoken: string[] = []
+    vi.stubGlobal('speechSynthesis', {
+      cancel: () => {},
+      speak: (utterance: { text: string }) => spoken.push(utterance.text),
+    })
+    vi.stubGlobal(
+      'SpeechSynthesisUtterance',
+      class {
+        lang = ''
+        text: string
+        constructor(text: string) {
+          this.text = text
+        }
+      },
+    )
+    routes['/api/sessions/s1/messages'] = () => reply('Start with **lockout/tagout**.')
+    render(<App />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Read replies aloud' }))
+    await userEvent.type(screen.getByLabelText('Message'), 'Hi{Enter}')
+
+    await screen.findByText('lockout/tagout')
+    expect(spoken).toEqual(['Start with lockout/tagout.'])
   })
 })

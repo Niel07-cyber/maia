@@ -1,3 +1,4 @@
+import { Mic } from 'lucide-react'
 import Markdown from 'react-markdown'
 
 import type { ToolEvent } from '@/api'
@@ -9,6 +10,7 @@ export type Message = {
   role: 'user' | 'assistant' | 'notice'
   text: string
   events?: ToolEvent[]
+  voice?: boolean // the technician spoke it: shown so they can check what was understood
 }
 
 const TOOL_LABELS: Record<string, string> = {
@@ -51,6 +53,13 @@ export function MessageBubble({ message }: { message: Message }) {
     return (
       <div className="flex justify-end">
         <p className="max-w-[80%] rounded-2xl rounded-br-sm bg-chrome px-4 py-2.5 text-[15px] whitespace-pre-wrap text-chrome-foreground shadow-sm">
+          {message.voice && (
+            <Mic
+              className="-mt-0.5 mr-1.5 inline size-3.5 opacity-70"
+              aria-label="Spoken"
+              role="img"
+            />
+          )}
           {message.text}
         </p>
       </div>

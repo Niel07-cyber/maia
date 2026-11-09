@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from maia.api import chat, demo, health
+from maia.api import chat, demo, health, voice
 from maia.config import get_settings
 
 
@@ -20,6 +20,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(chat.router)
     app.include_router(demo.router)
+    app.include_router(voice.router)
     return app
 
 

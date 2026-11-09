@@ -18,6 +18,7 @@ dependencies = [
     "openai>=3.45.0",
     "pyyaml>=6.0.3",
     "langgraph>=1.2.20",
+    "python-multipart>=0.0.33",
 ]
 
 [dependency-groups]

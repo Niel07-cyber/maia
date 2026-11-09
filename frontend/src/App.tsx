@@ -7,9 +7,22 @@ import {
   resetDemo,
   sendMessage,
   type ChatReply,
+  transcribe,
   type PendingAction,
 } from '@/api'
-import { ArrowUp, HardHat, Moon, Package, RotateCcw, Sun, Wrench } from 'lucide-react'
+import {
+  ArrowUp,
+  HardHat,
+  Mic,
+  Moon,
+  Package,
+  RotateCcw,
+  Square,
+  Sun,
+  Volume2,
+  VolumeX,
+  Wrench,
+} from 'lucide-react'
 
 import { BenchmarkPage } from '@/benchmark/BenchmarkPage'
 import { Avatar } from '@/components/Avatar'
@@ -19,6 +32,7 @@ import { WorkspacePanel } from '@/components/WorkspacePanel'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { canRecord, canSpeak, speak, stopSpeaking, useReadAloud, useRecorder } from '@/lib/speech'
 import { useTheme } from '@/lib/theme'
 import { applyEvents, EMPTY_WORKSPACE, type Workspace } from '@/lib/workspace'
 
@@ -55,6 +69,9 @@ export default function App() {
   const [workspace, setWorkspace] = useState<Workspace>(EMPTY_WORKSPACE)
   const [view, setView] = useState<View>(currentView)
   const [theme, toggleTheme] = useTheme()
+  const [readAloud, toggleReadAloud] = useReadAloud()
+  const recorder = useRecorder()
+  const [voice] = useState(() => ({ record: canRecord(), speak: canSpeak() }))
   const endRef = useRef<HTMLDivElement>(null)
   const started = useRef(false)
 
@@ -74,6 +91,10 @@ export default function App() {
 
   function showReply(reply: ChatReply) {
     add({ role: 'assistant', text: reply.text, events: reply.events })
+    if (readAloud) {
+      const confirm = reply.pending.map((action) => `Please confirm: ${action.description}.`)
+      speak([reply.text, ...confirm].join('\n'))
+    }
     setPending(reply.pending)
     setWorkspace((current) => applyEvents(current, reply.events))
   }
@@ -102,6 +123,25 @@ export default function App() {
     add({ role: 'user', text: trimmed })
     setInput('')
     run(async () => showReply(await sendMessage(sessionId, trimmed)))
+  }
+
+  async function toggleRecording() {
+    if (!sessionId || busy) return
+    if (!recorder.recording) {
+      stopSpeaking() // do not record MAIA's own voice
+      try {
+        await recorder.start()
+      } catch {
+        setError('The microphone is not available. Allow it in your browser, or type instead.')
+      }
+      return
+    }
+    const audio = await recorder.stop()
+    run(async () => {
+      const text = await transcribe(audio)
+      add({ role: 'user', text, voice: true })
+      showReply(await sendMessage(sessionId, text))
+    })
   }
 
   function answer(approved: boolean) {
@@ -174,6 +214,19 @@ export default function App() {
               </a>
             ))}
           </nav>
+          {view === 'assistant' && voice.speak && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleReadAloud}
+              aria-pressed={readAloud}
+              aria-label="Read replies aloud"
+              title={readAloud ? 'Reading replies aloud' : 'Read replies aloud'}
+              className="text-chrome-foreground hover:bg-white/10 hover:text-chrome-foreground"
+            >
+              {readAloud ? <Volume2 aria-hidden /> : <VolumeX aria-hidden />}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -280,7 +333,11 @@ export default function App() {
                   rows={1}
                   maxLength={2000}
                   placeholder={
-                    pending.length > 0 ? 'Or reply instead of confirming…' : 'Message MAIA…'
+                    recorder.recording
+                      ? 'Listening… tap the red button when you have finished.'
+                      : pending.length > 0
+                        ? 'Or reply instead of confirming…'
+                        : 'Message MAIA…'
                   }
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
@@ -288,6 +345,29 @@ export default function App() {
                   disabled={!sessionId}
                   className="max-h-40 min-h-10 resize-none border-0 bg-transparent text-[15px] shadow-none focus-visible:ring-0 md:text-[15px] dark:bg-transparent"
                 />
+                {voice.record && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={toggleRecording}
+                    disabled={!sessionId || busy}
+                    aria-pressed={recorder.recording}
+                    aria-label={recorder.recording ? 'Stop and send' : 'Speak instead of typing'}
+                    title={recorder.recording ? 'Stop and send' : 'Speak'}
+                    className={cn(
+                      'size-10 shrink-0 rounded-xl',
+                      recorder.recording &&
+                        'border-signal-red bg-signal-red text-white hover:bg-signal-red/90 hover:text-white motion-safe:animate-pulse',
+                    )}
+                  >
+                    {recorder.recording ? (
+                      <Square className="fill-current" aria-hidden />
+                    ) : (
+                      <Mic aria-hidden />
+                    )}
+                  </Button>
+                )}
                 <Button
                   type="submit"
                   size="icon"

@@ -81,6 +81,10 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
+  return parse<T>(response)
+}
+
+async function parse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const detail = await response
       .json()
@@ -109,4 +113,15 @@ export function confirmPending(sessionId: string, approved: boolean): Promise<Ch
 
 export async function resetDemo(): Promise<void> {
   await post<{ status: string }>('/api/demo/reset')
+}
+
+/** Turn a push-to-talk recording into text. */
+export async function transcribe(audio: Blob): Promise<string> {
+  const form = new FormData()
+  const extension = audio.type.includes('mp4') ? 'mp4' : audio.type.includes('ogg') ? 'ogg' : 'webm'
+  form.append('audio', audio, `speech.${extension}`)
+  // No Content-Type header: the browser sets the multipart boundary itself.
+  const response = await fetch(`${API_URL}/api/transcribe`, { method: 'POST', body: form })
+  const data = await parse<{ text: string }>(response)
+  return data.text
 }
