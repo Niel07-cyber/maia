@@ -182,4 +182,36 @@ describe('MAIA chat', () => {
     await screen.findByText('lockout/tagout')
     expect(spoken).toEqual(['Start with lockout/tagout.'])
   })
+
+  it('opens the job overview as a side sheet on small screens', async () => {
+    routes['/api/sessions/s1/messages'] = () =>
+      reply('Step 1 logged.', {
+        events: [
+          {
+            name: 'log_step',
+            ok: true,
+            confirmed: null,
+            result: {
+              step_log_id: 1,
+              procedure_code: 'PROC-BRK-01',
+              step: 1,
+              reading: null,
+              unit: null,
+              assessment: null,
+            },
+          },
+        ],
+      })
+    render(<App />)
+    await userEvent.type(await screen.findByLabelText('Message'), 'Lockout done.{Enter}')
+    await screen.findByText('Step 1 logged.')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open job overview' }))
+
+    const sheet = screen.getByRole('dialog', { name: 'Job overview' })
+    expect(within(sheet).getByText('Step 1')).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: 'Job overview' })).toBeNull()
+  })
 })

@@ -12,16 +12,21 @@ import {
 } from '@/api'
 import {
   ArrowUp,
+  BatteryMedium,
+  CircleDot,
+  DoorOpen,
   HardHat,
   Mic,
   Moon,
-  Package,
+  PanelLeft,
   RotateCcw,
   Square,
   Sun,
   Volume2,
   VolumeX,
   Wrench,
+  X,
+  Zap,
 } from 'lucide-react'
 
 import { BenchmarkPage } from '@/benchmark/BenchmarkPage'
@@ -39,10 +44,29 @@ import { applyEvents, EMPTY_WORKSPACE, type Workspace } from '@/lib/workspace'
 const SUGGESTIONS = [
   {
     icon: Wrench,
-    title: 'Start a brake inspection',
+    title: 'Brake pad inspection',
     text: "I'm starting the brake pad inspection on bogie B2 of RV200-014.",
   },
-  { icon: Package, title: 'Check spare parts', text: 'How many brake pads are in stock?' },
+  {
+    icon: Zap,
+    title: 'Pantograph carbon strip',
+    text: 'I need to check the pantograph carbon strip on RV200-027.',
+  },
+  {
+    icon: CircleDot,
+    title: 'Wheel flange check',
+    text: 'Wheel flange inspection on wheelset 3 of RV200-027, please.',
+  },
+  {
+    icon: BatteryMedium,
+    title: 'Battery box check',
+    text: 'Time for the monthly battery box check on RV200-014.',
+  },
+  {
+    icon: DoorOpen,
+    title: 'Door function test',
+    text: "I'm testing passenger door 1 on RV200-027.",
+  },
   {
     icon: HardHat,
     title: 'Safety before you start',
@@ -69,8 +93,10 @@ export default function App() {
   const [workspace, setWorkspace] = useState<Workspace>(EMPTY_WORKSPACE)
   const [view, setView] = useState<View>(currentView)
   const [theme, toggleTheme] = useTheme()
+  const [jobOpen, setJobOpen] = useState(false)
   const [readAloud, toggleReadAloud] = useReadAloud()
   const recorder = useRecorder()
+  const jobItems = workspace.steps.length + workspace.workOrders.length
   const [voice] = useState(() => ({ record: canRecord(), speak: canSpeak() }))
   const endRef = useRef<HTMLDivElement>(null)
   const started = useRef(false)
@@ -82,7 +108,15 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    endRef.current?.scrollIntoView?.({ behavior: 'smooth' })
+    if (!jobOpen) return
+    const onKey = (event: globalThis.KeyboardEvent) => event.key === 'Escape' && setJobOpen(false)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [jobOpen])
+
+  useEffect(() => {
+    // Follow the conversation, but leave the welcome screen at the top.
+    if (messages.length > 0) endRef.current?.scrollIntoView?.({ behavior: 'smooth' })
   }, [messages, pending])
 
   function add(message: Omit<Message, 'id'>) {
@@ -181,17 +215,36 @@ export default function App() {
 
   return (
     <div className="flex h-dvh flex-col bg-background text-foreground">
-      <header className="flex items-center justify-between border-b bg-chrome px-4 py-3 text-chrome-foreground sm:px-6">
-        <div className="flex items-center gap-3">
-          <Avatar className="size-9" />
+      <header className="flex items-center justify-between gap-2 border-b bg-chrome px-3 py-3 text-chrome-foreground sm:px-6">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {view === 'assistant' && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setJobOpen(true)}
+              aria-label="Open job overview"
+              aria-expanded={jobOpen}
+              className="relative -ml-1 text-chrome-foreground hover:bg-white/10 hover:text-chrome-foreground lg:hidden"
+            >
+              <PanelLeft aria-hidden />
+              {jobItems > 0 && (
+                <span className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-hivis text-[10px] font-bold text-hivis-foreground">
+                  {jobItems}
+                </span>
+              )}
+            </Button>
+          )}
+          <Avatar className="hidden size-9 min-[420px]:flex" />
           <div>
-            <h1 className="font-display text-lg leading-none font-semibold tracking-tight">MAIA</h1>
-            <p className="mt-1 text-xs text-chrome-foreground/70">
+            <h1 className="hidden font-display text-lg leading-none font-semibold tracking-tight min-[420px]:block">
+              MAIA
+            </h1>
+            <p className="mt-1 hidden text-xs text-chrome-foreground/70 sm:block">
               Maintenance assistant for the RV-200 demo depot
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-1 sm:gap-3">
           <nav aria-label="Pages" className="flex rounded-lg bg-white/10 p-1 text-sm">
             {(
               [
@@ -204,7 +257,7 @@ export default function App() {
                 href={href}
                 aria-current={view === id ? 'page' : undefined}
                 className={cn(
-                  'rounded-md px-3 py-1 font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-hivis',
+                  'rounded-md px-2.5 py-1 font-medium sm:px-3 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-hivis',
                   view === id
                     ? 'bg-hivis text-hivis-foreground'
                     : 'text-chrome-foreground/80 hover:text-chrome-foreground',
@@ -243,10 +296,11 @@ export default function App() {
               size="sm"
               onClick={reset}
               disabled={busy}
+              aria-label="Reset demo"
               className="border-white/25 bg-white/5 text-chrome-foreground hover:bg-white/15 hover:text-chrome-foreground dark:bg-white/5"
             >
               <RotateCcw aria-hidden />
-              Reset demo
+              <span className="hidden sm:inline">Reset demo</span>
             </Button>
           )}
         </div>
@@ -262,24 +316,26 @@ export default function App() {
             <main className="flex-1 overflow-y-auto" aria-live="polite">
               <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
                 {messages.length === 0 && (
-                  <div className="pt-10">
-                    <h2 className="max-w-xl font-display text-3xl leading-tight font-semibold tracking-tight text-primary sm:text-4xl">
+                  <div className="pt-4 sm:pt-10">
+                    <h2 className="max-w-xl font-display text-2xl leading-tight font-semibold tracking-tight text-primary sm:text-4xl">
                       What are you working on today?
                     </h2>
                     <p className="mt-3 max-w-lg text-[15px] text-muted-foreground">
                       MAIA walks you through RV-200 procedures one step at a time, straight from the
-                      manual, and asks before it changes anything.
+                      manual, and asks before it changes anything. The demo depot has two railcars,
+                      RV200-014 and RV200-027, each with bogies, wheelsets, a pantograph, a battery
+                      box and doors.
                     </p>
-                    <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                    <div className="mt-6 grid gap-2 sm:mt-8 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
                       {SUGGESTIONS.map(({ icon: Icon, title, text }) => (
                         <button
                           key={title}
                           type="button"
                           disabled={!sessionId || busy}
                           onClick={() => send(text)}
-                          className="flex flex-col items-start gap-3 rounded-2xl border bg-card p-4 text-left shadow-sm transition-colors outline-none hover:border-primary/40 focus-visible:ring-[3px] focus-visible:ring-ring/60 disabled:opacity-50"
+                          className="flex items-start gap-3 rounded-2xl border bg-card p-3 text-left shadow-sm sm:flex-col sm:p-4 transition-colors outline-none hover:border-primary/40 focus-visible:ring-[3px] focus-visible:ring-ring/60 disabled:opacity-50"
                         >
-                          <span className="flex size-9 items-center justify-center rounded-lg bg-secondary text-primary">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary">
                             <Icon className="size-5" aria-hidden />
                           </span>
                           <span>
@@ -387,6 +443,43 @@ export default function App() {
           <WorkspacePanel workspace={workspace} className="hidden border-l lg:block" />
         </div>
       )}
+
+      {/* On phones and tablets the job overview slides in from the side, like a chat app's
+          sidebar. Closed, it is inert: hidden from screen readers and the keyboard. */}
+      <div className={cn('fixed inset-0 z-40 lg:hidden', !jobOpen && 'pointer-events-none')}>
+        <div
+          aria-hidden
+          onClick={() => setJobOpen(false)}
+          className={cn(
+            'absolute inset-0 bg-black/40 transition-opacity motion-reduce:transition-none',
+            jobOpen ? 'opacity-100' : 'opacity-0',
+          )}
+        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Job overview"
+          aria-hidden={!jobOpen}
+          inert={!jobOpen}
+          className={cn(
+            'absolute inset-y-0 left-0 flex w-[85%] max-w-sm flex-col bg-card shadow-xl transition-transform duration-200 motion-reduce:transition-none',
+            jobOpen ? 'translate-x-0' : '-translate-x-full',
+          )}
+        >
+          <div className="flex items-center justify-between border-b px-4 py-3">
+            <h2 className="font-display text-sm font-semibold text-ink">Job overview</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setJobOpen(false)}
+              aria-label="Close job overview"
+            >
+              <X aria-hidden />
+            </Button>
+          </div>
+          {jobOpen && <WorkspacePanel workspace={workspace} className="min-h-0 flex-1" />}
+        </div>
+      </div>
     </div>
   )
 }
