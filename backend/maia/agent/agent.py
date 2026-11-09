@@ -103,20 +103,19 @@ class MaintenanceAgent:
             if not response.tool_calls:
                 return AgentReply(text=response.content or "", events=events)
 
-            needs_confirmation = []
+            to_confirm = []
             for call in response.tool_calls:
-                tool = TOOLS.get(call.name)
-                if tool is not None and tool.requires_confirmation:
-                    needs_confirmation.append(call)
+                if needs_confirmation(call):
+                    to_confirm.append(call)
                 else:
                     events.append(self._execute(conversation, call))
 
-            if needs_confirmation:
-                conversation.pending = needs_confirmation
+            if to_confirm:
+                conversation.pending = to_confirm
                 return AgentReply(
                     text=response.content or "Please confirm the following action(s).",
                     events=events,
-                    pending=[self._describe(call) for call in needs_confirmation],
+                    pending=[describe_call(call) for call in to_confirm],
                 )
         return AgentReply(
             text="I could not finish this request. Please rephrase or break it into steps.",
@@ -126,53 +125,71 @@ class MaintenanceAgent:
     def _execute(
         self, conversation: Conversation, call: ToolCall, confirmed: bool | None = None
     ) -> ToolEvent:
-        """Validate the arguments, run the tool in its own transaction, and give the result
-        (or the reason it failed) back to the LLM."""
-        tool = TOOLS.get(call.name)
-        ok = False
-        try:
-            if tool is None:
-                raise ToolError(f"There is no tool called '{call.name}'.")
-            args = tool.args_model.model_validate(call.arguments)
-            with self.transaction() as session:
-                ctx = ToolContext(session, self.embedder, conversation.session_id)
-                result: Any = to_json(tool.run(ctx, args))
-            ok = True
-        except ValidationError as exc:
-            result = {"error": f"Invalid arguments: {exc.errors(include_url=False)}"}
-        except ToolError as exc:
-            result = {"error": str(exc)}
-
-        logger.info("tool %s ok=%s", call.name, ok)
-        self._add_tool_message(conversation, call, result)
-        return ToolEvent(call.name, call.arguments, ok, result, confirmed)
+        event = run_tool(call, self.embedder, self.transaction, conversation.session_id, confirmed)
+        conversation.messages.append(tool_message(call, event.result))
+        return event
 
     def _decline_pending(self, conversation: Conversation, reason: str) -> list[ToolEvent]:
         events = []
         for call in conversation.pending:
             result = {"error": f"Not done. {reason}"}
-            self._add_tool_message(conversation, call, result)
+            conversation.messages.append(tool_message(call, result))
             events.append(ToolEvent(call.name, call.arguments, False, result, confirmed=False))
         conversation.pending = []
         return events
 
-    @staticmethod
-    def _describe(call: ToolCall) -> PendingAction:
-        tool = TOOLS[call.name]
-        try:
-            args = tool.args_model.model_validate(call.arguments)
-            description = tool.describe(args) if tool.describe else call.name
-        except ValidationError:
-            description = f"{call.name} {json.dumps(call.arguments)}"
-        return PendingAction(call.id, call.name, description)
 
-    @staticmethod
-    def _add_tool_message(conversation: Conversation, call: ToolCall, result: Any) -> None:
-        conversation.messages.append(
-            {
-                "role": "tool",
-                "tool_call_id": call.id,
-                "name": call.name,
-                "content": json.dumps(result),
-            }
-        )
+# ---------- shared by every agent implementation ----------
+
+
+def run_tool(
+    call: ToolCall,
+    embedder: Embedder,
+    transaction: TransactionFactory,
+    session_id: str,
+    confirmed: bool | None = None,
+) -> ToolEvent:
+    """Validate the arguments, run the tool in its own transaction, and return the result
+    (or the reason it failed), ready to give back to the LLM."""
+    tool = TOOLS.get(call.name)
+    ok = False
+    try:
+        if tool is None:
+            raise ToolError(f"There is no tool called '{call.name}'.")
+        args = tool.args_model.model_validate(call.arguments)
+        with transaction() as session:
+            result: Any = to_json(tool.run(ToolContext(session, embedder, session_id), args))
+        ok = True
+    except ValidationError as exc:
+        result = {"error": f"Invalid arguments: {exc.errors(include_url=False)}"}
+    except ToolError as exc:
+        result = {"error": str(exc)}
+
+    logger.info("tool %s ok=%s", call.name, ok)
+    return ToolEvent(call.name, call.arguments, ok, result, confirmed)
+
+
+def tool_message(call: ToolCall, result: Any) -> dict[str, Any]:
+    """The message that gives a tool's result back to the LLM."""
+    return {
+        "role": "tool",
+        "tool_call_id": call.id,
+        "name": call.name,
+        "content": json.dumps(result),
+    }
+
+
+def describe_call(call: ToolCall) -> PendingAction:
+    """What the technician is asked to confirm, in plain words."""
+    tool = TOOLS[call.name]
+    try:
+        args = tool.args_model.model_validate(call.arguments)
+        description = tool.describe(args) if tool.describe else call.name
+    except ValidationError:
+        description = f"{call.name} {json.dumps(call.arguments)}"
+    return PendingAction(call.id, call.name, description)
+
+
+def needs_confirmation(call: ToolCall) -> bool:
+    tool = TOOLS.get(call.name)
+    return tool is not None and tool.requires_confirmation

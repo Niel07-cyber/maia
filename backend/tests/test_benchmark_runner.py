@@ -2,10 +2,12 @@ from collections.abc import Callable
 from contextlib import AbstractContextManager
 from typing import Any
 
+import pytest
 from fakes import ScriptedLLM, UnavailableLLM, call, say
 from sqlalchemy.orm import Session
 
 from maia.agent.agent import MaintenanceAgent
+from maia.agent.langgraph_agent import LangGraphAgent
 from maia.agent.llm import LLMResponse, Usage
 from maia.benchmark.runner import MAX_TURNS, MeteredModel, run_scenario
 from maia.benchmark.scenario import Scenario
@@ -39,8 +41,12 @@ def with_usage(response: LLMResponse, cost: float | None = 0.001) -> LLMResponse
     return LLMResponse(response.content, response.tool_calls, usage=Usage(100, 20, cost))
 
 
+@pytest.mark.parametrize("agent_class", [MaintenanceAgent, LangGraphAgent])
 def test_technician_says_each_message_and_approves_confirmations(
-    depot: Session, embedder: Embedder, transaction: Transaction
+    agent_class: type[MaintenanceAgent] | type[LangGraphAgent],
+    depot: Session,
+    embedder: Embedder,
+    transaction: Transaction,
 ) -> None:
     llm = MeteredModel(
         ScriptedLLM(
@@ -51,7 +57,7 @@ def test_technician_says_each_message_and_approves_confirmations(
             ]
         )
     )
-    agent = MaintenanceAgent(llm, embedder, transaction)
+    agent = agent_class(llm, embedder, transaction)
 
     transcript = run_scenario(agent, scenario(["Hi", "Open a work order"]))
 
