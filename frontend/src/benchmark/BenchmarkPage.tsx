@@ -8,6 +8,9 @@ import type { Report, Run } from './types'
 
 const RESULTS_URL = `${import.meta.env.BASE_URL}benchmark/results.json`
 const CHECK_URL = `${import.meta.env.BASE_URL}benchmark/prompt-v2-check.json`
+const FRAMEWORK_URL = `${import.meta.env.BASE_URL}benchmark/framework-comparison.json`
+
+const AGENT_NAMES: Record<string, string> = { explicit: 'Explicit loop', langgraph: 'LangGraph' }
 
 async function load(url: string): Promise<Report> {
   const response = await fetch(url)
@@ -22,6 +25,7 @@ function money(value: number | null, digits = 4): string {
 export function BenchmarkPage() {
   const [report, setReport] = useState<Report | null>(null)
   const [check, setCheck] = useState<Report | null>(null)
+  const [frameworks, setFrameworks] = useState<Report | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Run | null>(null)
 
@@ -33,6 +37,9 @@ export function BenchmarkPage() {
     load(CHECK_URL)
       .then(setCheck)
       .catch(() => setCheck(null))
+    load(FRAMEWORK_URL)
+      .then(setFrameworks)
+      .catch(() => setFrameworks(null))
   }, [])
 
   if (error) {
@@ -225,6 +232,72 @@ export function BenchmarkPage() {
           </div>
         )}
       </Section>
+
+      {frameworks && (
+        <Section
+          title="Explicit loop vs LangGraph"
+          intro={`The same agent built twice: once as a plain loop, once with LangGraph. Same model (${modelName(frameworks.summaries[0]?.model ?? '')}), prompt, tools and safety code, so only the orchestration differs.`}
+        >
+          <div className="overflow-x-auto rounded-2xl border bg-card shadow-sm">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left">
+                  <th className="px-5 py-3 font-medium text-muted-foreground">Metric</th>
+                  {frameworks.summaries.map((s) => (
+                    <th key={s.agent} className="px-5 py-3 font-display font-semibold">
+                      {AGENT_NAMES[s.agent] ?? s.agent}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                <Row label="Runs passed">
+                  {frameworks.summaries.map((s) => (
+                    <td key={s.agent} className="px-5 py-3 font-semibold">
+                      {s.passed}/{s.runs}
+                    </td>
+                  ))}
+                </Row>
+                <Row label="Safety violations">
+                  {frameworks.summaries.map((s) => (
+                    <td
+                      key={s.agent}
+                      className={cn(
+                        'px-5 py-3 font-semibold',
+                        s.safety_violations === 0 ? 'text-signal-green' : 'text-signal-red',
+                      )}
+                    >
+                      {s.safety_violations}
+                    </td>
+                  ))}
+                </Row>
+                <Row label="Average time per run">
+                  {frameworks.summaries.map((s) => (
+                    <td key={s.agent} className="px-5 py-3 tabular-nums">
+                      {s.mean_seconds.toFixed(1)} s
+                    </td>
+                  ))}
+                </Row>
+                <Row label="Average cost per run">
+                  {frameworks.summaries.map((s) => (
+                    <td key={s.agent} className="px-5 py-3 tabular-nums">
+                      {money(s.mean_cost_usd)}
+                    </td>
+                  ))}
+                </Row>
+              </tbody>
+            </table>
+          </div>
+          <p className="max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
+            No meaningful difference. Both had zero safety violations, and the one-run gap in passes
+            is within the run-to-run variation of the model. Every failure was the same kind in both
+            versions: the model skipped logging a step or a stock check. The orchestration does not
+            change how well the agent behaves; the model and the prompt do. LangGraph adds saved
+            state and pause-and-resume for free, at the cost of more concepts; the plain loop is
+            easier to read and debug.
+          </p>
+        </Section>
+      )}
 
       <Section title="Limits of this benchmark">
         <ul className="max-w-2xl list-disc space-y-2 pl-5 text-[15px] leading-relaxed text-muted-foreground">
