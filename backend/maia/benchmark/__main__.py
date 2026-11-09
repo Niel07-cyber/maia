@@ -3,6 +3,7 @@
 Usage:
     uv run python -m maia.benchmark                      # both configured models, 3 repeats
     uv run python -m maia.benchmark --repeats 1 --scenarios ppe-question
+    uv run python -m maia.benchmark --agents explicit langgraph --models openai/gpt-5.4-mini
 
 Warning: every run resets the demo data (work orders, reservations, logged steps).
 """
@@ -13,6 +14,7 @@ import logging
 from pathlib import Path
 
 from maia.agent.agent import MaintenanceAgent
+from maia.agent.langgraph_agent import LangGraphAgent
 from maia.agent.llm import ChatModel, LiteLLMChat
 from maia.benchmark.benchmark import (
     AgentFactory,
@@ -52,7 +54,10 @@ def main() -> None:
     def explicit(llm: ChatModel) -> Agent:
         return MaintenanceAgent(llm, embedder, transaction)
 
-    agents: dict[str, AgentFactory] = {"explicit": explicit}
+    def langgraph(llm: ChatModel) -> Agent:
+        return LangGraphAgent(llm, embedder, transaction)
+
+    agents: dict[str, AgentFactory] = {"explicit": explicit, "langgraph": langgraph}
     unknown_agents = set(args.agents) - agents.keys()
     if unknown_agents:
         parser.error(f"unknown agents: {sorted(unknown_agents)}")
