@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     llm_reasoning_effort: str | None = "low"
     embedding_model: str = "openai/text-embedding-3-small"
 
+    # Speech-to-text for push-to-talk.
+    transcription_model: str = "openai/gpt-4o-mini-transcribe"
+
     database_url: str = "postgresql+psycopg://maia:maia@db:5432/maia"
     frontend_origin: str = "http://localhost:5173"
 

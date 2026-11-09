@@ -7,6 +7,7 @@ from maia.agent.llm import LiteLLMChat
 from maia.agent.sessions import ConversationStore
 from maia.db.session import transaction
 from maia.manual.embeddings import LiteLLMEmbedder
+from maia.speech import LiteLLMTranscriber, Transcriber
 
 
 def get_transaction() -> TransactionFactory:
@@ -21,3 +22,8 @@ def get_agent() -> MaintenanceAgent:
 @lru_cache
 def get_conversation_store() -> ConversationStore:
     return ConversationStore()
+
+
+@lru_cache
+def get_transcriber() -> Transcriber:
+    return LiteLLMTranscriber()
