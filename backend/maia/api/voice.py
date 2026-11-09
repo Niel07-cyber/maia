@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from maia.agent.llm import ModelUnavailableError
 from maia.api.deps import get_transcriber
+from maia.api.limits import RateLimited
 from maia.speech import Transcriber
 
 logger = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ class Transcript(BaseModel):
     text: str
 
 
-@router.post("/transcribe")
+@router.post("/transcribe", dependencies=[RateLimited])
 async def transcribe(audio: UploadFile, transcriber: TranscriberDep) -> Transcript:
     content_type = (audio.content_type or "").split(";")[0]
     if not content_type.startswith("audio/"):

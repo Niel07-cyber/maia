@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     # Speech-to-text for push-to-talk.
     transcription_model: str = "openai/gpt-4o-mini-transcribe"
 
+    # Public demo protection. 0 turns a limit off (the default, for local development).
+    rate_limit_per_minute: int = 0  # requests per visitor that call a model
+    rate_limit_per_day: int = 0
+    daily_budget_usd: float = 0.0  # chat model spending per UTC day, for the whole demo
+
     database_url: str = "postgresql+psycopg://maia:maia@db:5432/maia"
     frontend_origin: str = "http://localhost:5173"
 

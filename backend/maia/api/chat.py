@@ -8,9 +8,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from maia.agent.agent import AgentReply, Conversation, MaintenanceAgent
+from maia.agent.budget import BudgetExceededError
 from maia.agent.llm import ModelUnavailableError
 from maia.agent.sessions import ConversationStore
 from maia.api.deps import get_agent, get_conversation_store
+from maia.api.limits import RateLimited
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +68,7 @@ def create_session(store: StoreDep) -> SessionCreated:
     return SessionCreated(session_id=store.create().session_id)
 
 
-@router.post("/{session_id}/messages")
+@router.post("/{session_id}/messages", dependencies=[RateLimited])
 def send_message(
     session_id: str, message: MessageIn, agent: AgentDep, store: StoreDep
 ) -> ChatReply:
@@ -75,7 +77,7 @@ def send_message(
         return _call_agent(lambda: agent.send(conversation, message.text))
 
 
-@router.post("/{session_id}/confirmation")
+@router.post("/{session_id}/confirmation", dependencies=[RateLimited])
 def confirm(
     session_id: str, confirmation: ConfirmationIn, agent: AgentDep, store: StoreDep
 ) -> ChatReply:
@@ -94,6 +96,8 @@ def _get_conversation(store: ConversationStore, session_id: str) -> Conversation
 def _call_agent(run: Callable[[], AgentReply]) -> ChatReply:
     try:
         return ChatReply.from_agent(run())
+    except BudgetExceededError as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     except ModelUnavailableError as exc:
         logger.warning("model unavailable: %s", exc)
         raise HTTPException(
