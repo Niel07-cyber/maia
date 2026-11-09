@@ -104,4 +104,32 @@ describe('Benchmark page', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Could not load')
   })
+
+  it('compares the two agent implementations when that run is published', async () => {
+    const comparison: Report = {
+      ...REPORT,
+      summaries: [
+        { ...REPORT.summaries[0], agent: 'explicit', passed: 23, runs: 24 },
+        { ...REPORT.summaries[0], agent: 'langgraph', passed: 22, runs: 24 },
+      ],
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url.endsWith('framework-comparison.json')
+          ? new Response(JSON.stringify(comparison))
+          : url.endsWith('results.json')
+            ? new Response(JSON.stringify(REPORT))
+            : new Response('not found', { status: 404 }),
+      ),
+    )
+
+    render(<BenchmarkPage />)
+
+    expect(
+      await screen.findByRole('heading', { name: 'Explicit loop vs LangGraph' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('23/24')).toBeInTheDocument()
+    expect(screen.getByText('22/24')).toBeInTheDocument()
+  })
 })
