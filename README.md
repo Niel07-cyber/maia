@@ -15,7 +15,25 @@ reliably it does all of this, across models and agent frameworks.
 
 ![MAIA guiding a brake pad inspection, with the job overview on the right](docs/images/chat.png)
 
-## What it does
+## Features
+
+- **Answers from the manual (RAG):** retrieves the relevant manual sections and cites their codes
+- **Step-by-step guidance:** walks through each procedure, lockout/tagout first, and logs every step
+- **Safety assessment in code:** readings are checked against the manual's limits by deterministic
+  Python, not by the model
+- **Confirmation before any write:** work orders and part reservations wait for the technician's
+  approval on a confirmation card
+- **Stock checks:** looks up replacement parts and says when one is unavailable
+- **Live job overview:** the asset, steps, readings with their assessment and work orders, in a
+  side panel (a slide-out sheet on mobile)
+- **Voice:** push-to-talk speech input and optional spoken replies
+- **Benchmark:** 8 scenarios scored from the database, comparing models and agent frameworks, with
+  a public results page
+- **MCP server:** the same tools, with the same safety rules, for Claude Desktop or any MCP client
+- **Night shift mode:** a dark theme for low-light depots
+- **Public demo protection:** per-visitor rate limits and a daily spending cap
+
+## Example: a brake pad inspection
 
 A technician says *"I'm starting the brake pad inspection on bogie B2 of RV200-014"*. MAIA:
 
@@ -109,12 +127,15 @@ small sample, the technician is scripted, and the prompt was improved on these s
 
 ## Tech stack
 
-- **Backend:** Python 3.12, FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16 with pgvector,
-  LiteLLM (OpenAI models), LangGraph, MCP, uv
+- **AI:** tool-calling LLM agent (GPT-5.4 mini and nano via LiteLLM), RAG with
+  `text-embedding-3-small` and pgvector, LangGraph, Model Context Protocol (MCP), speech-to-text
+  (`gpt-4o-mini-transcribe`), LLM evaluation benchmark
+- **Backend:** Python 3.12, FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16 with pgvector, uv
 - **Frontend:** React 19, TypeScript, Vite, Tailwind CSS, shadcn/ui, Vitest, Testing Library
 - **Quality:** 129 backend tests (pytest), 20 frontend tests, mypy strict, ruff, oxlint,
   Prettier, pre-commit
-- **Delivery:** Docker, GitHub Actions CI, AWS EC2 with Docker Compose, Caddy (automatic HTTPS)
+- **Delivery:** Docker, GitHub Actions CI/CD (every merge to main is tested, then deployed to AWS
+  automatically), AWS EC2 with Docker Compose, Caddy (automatic HTTPS)
 - **Public demo protection:** per-visitor rate limits and a daily model spending cap
 
 ## Run it locally
@@ -156,6 +177,11 @@ Caddy, which serves the React site, forwards `/api` to the backend and obtains t
 certificate. Only ports 80 and 443 are public; the database and the backend have no public
 ports. See `deploy/` for the Caddyfile and the production environment template.
 
+Deployment is automatic. When a change is merged to `main`, GitHub Actions runs the backend and
+frontend checks and builds the Docker image; if everything passes, it connects to the server
+with a restricted SSH key that can only run `deploy/deploy.sh`, which pulls the new code and
+rebuilds the containers. The job then checks that the live site responds.
+
 ## Repository layout
 
 ```
@@ -174,16 +200,26 @@ docs/adr/                architecture decision records
 - [ADR 0001](docs/adr/0001-explicit-agent-loop.md): an explicit agent loop instead of a framework
 - [ADR 0002](docs/adr/0002-langgraph-comparison.md): a LangGraph version, built to compare the two
 
-## Limitations and future work
+## Limitations
 
 - A weaker model can skip a tool call, and then the safety check never runs. A structured
   reading input (a form that calls `log_step` directly) would close this gap.
 - Invalid work orders are refused after the technician confirms; checking them before the
   confirmation card is shown would be better.
 - Conversations live in memory; LangGraph's Postgres checkpointer would let them survive restarts.
-- Next steps: on-device speech recognition for sites where audio must stay local, an embodied
-  avatar in AR for hands-free guidance, multilingual support (French and Dutch), and held-out
-  benchmark scenarios written after the prompt changes.
+- Three runs per scenario is a small sample, and the prompt was tuned on the same scenarios.
+
+## Future improvements
+
+- **Live progress streaming:** show "Searching the manual…" or "Logging step 4…" as each tool
+  runs, instead of waiting for the whole reply. This also makes the agent feel faster.
+- **Photo input:** the technician photographs the brake pad and a vision model estimates the wear,
+  as a second check on the measured reading. The code-based assessment keeps the final word.
+- **Embodied avatar and XR:** a guide in augmented reality for hands-free work, showing each step
+  on the equipment itself.
+- **Multilingual:** French and Dutch, for depots in Belgium and France.
+- **On-device speech recognition** for sites where audio must stay local.
+- **Held-out benchmark scenarios** written after the prompt changes, for a fairer measure.
 
 ## Author
 
